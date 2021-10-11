@@ -4,6 +4,7 @@ import numpy as np
 import os
 from dataclasses import dataclass
 from glob import glob
+from typing import List
 
 # represents a ChemStation integration report
 class Report():
