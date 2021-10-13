@@ -115,7 +115,7 @@ Here are useful fields in Optimizer:
 
 Four abstract methods need implementation:
 
-- **`next_point(self)**
+- **`next_point(self)`**
     Creates the next point in the parameter space as a list.  List members should be floats for `ContinuousParameter`s and strings for `CategoricalParameter`s.
     The list should be ordered the same as `optimizer.parameter_space`.
 - **`compute_objective_function_value(self, experiment_identifier)`**
