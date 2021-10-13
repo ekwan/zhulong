@@ -92,6 +92,7 @@ class Optimizer():
             if plateaued:
                 # compute the objective function value and store it
                 objective_function_value = self.compute_objective_function_value(experiment.identifier)
+                print(f"{objective_function_value=}")
                 self.objective_function_history[experiment.identifier] = objective_function_value
 
                 # tell the ChemSpeed to stop sampling
@@ -103,6 +104,7 @@ class Optimizer():
     def run(self):
         print("starting opt")
         while not self.is_finished():
+            print("==============")
             parameter_values = self.next_point()
             print(f"{parameter_values=}")
             self._run_experiment(parameter_values)
