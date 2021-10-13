@@ -99,7 +99,20 @@ class Experiment():
 
         # create the new row
         new_row = [ self.identifier ]
-        new_row.extend([ p.value for p in self.parameters ])
+        for p in self.parameters:
+            # continuous parameter, so write the value directly
+            if isinstance(p, ContinuousParameter):
+                new_row.append(p.value)
+
+            # categorical parameter, so write the numerical value
+            elif isinstance(p, CategoricalParameter):
+                numerical_value = p.allowed_levels[p.value]
+                new_row.append(numerical_value)
+
+            # other parameter types must be supported explicitly
+            else:
+                raise ValueError("unexpected parameter type: {type(parameter)}")
+
         sampling_value = 1 if self.sampling else 0  # write 1 to continue sampling and 0 to stop
         new_row.append(sampling_value)
         print("new row", new_row)
