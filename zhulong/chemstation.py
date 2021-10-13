@@ -77,12 +77,12 @@ class Report():
     #
     # if multiple peaks are found within the retention time window for the compound,
     # return the largest area
-    # if no match is found, return None
+    # if no match is found, return 0
     def get_integration(self, compound):
         assert compound.min_retention_time <= compound.max_retention_time, f"check retention times for compound {compound.name}"
         query_df = self.df.query(f"{compound.min_retention_time} <= retention_time <= {compound.max_retention_time}")
         if len(query_df) == 0:
-            return None
+            return 0.0
         return query_df.area.max()
 
 @dataclass
