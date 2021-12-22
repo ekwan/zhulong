@@ -2,176 +2,132 @@
 
 Autonomous optimization code.  This code provides code to run autonomous optimization with a ChemSpeed Robot and Agilent HPLC system.
 
-### A Basic Optimization
+### A Trivial Optimization
 
-Here's how to run the simplest kind of optimization: three random points from a two-parameter space.  This code is available at the bottom of `optimizer.py`.
-First, define the parameter space as one continuous and one categorical parameter:
+Here's how to run two points.  You can find this code in `zhulong/zhulong.py`.
 
-```
-param1 = ContinuousParameter(name="temperature", min_value=-10.0, max_value=100.0)
-param2 = CategoricalParameter(name="HCl", allowed_levels={"low":1.0, "medium":2.0, "high":3.0})
-parameter_space = [ param1, param2 ]
-```
-
-Next, setup the compound to be monitored by HPLC:
+Here are the required imports:
 
 ```
-starting_material = Compound(name="starting material", min_retention_time=1.28, max_retention_time=1.48)
-product = Compound(name="bromo product", min_retention_time=1.53, max_retention_time=1.73)
-internal_standard = Compound(name="internal standard", min_retention_time=2.05, max_retention_time=2.25)
+from experiment import Reagent, ParameterSpace, Experiment
+from chemstation import Peak, get_yield_function
+from chemspeed import ChemSpeed
 ```
 
-Create a `DummyOptimizer` which just samples three random points.  There are already three example HPLC files in the repo, so we can trick the program into thinking that three new files are available.  (Files are parsed from oldest to newest, ignoring files that have already been seen.)
+First, define the starting material and some reagents:
 
 ```
-optimizer = DummyOptimizer(name="dummy optimizer", chemspeed_csv_filename=chemspeed_csv_filename,
-                           chemstation_folder="/Users/kwaneu/research/zhulong/data/E-Z 2021-09-30 17-18-47",
-                           parameter_space=parameter_space)
+# define the starting material
+starting_material = Reagent(name="starting material", abbreviation="SM", min_volume=100, max_volume=100)
+
+# define the reagents
+# assume we will pick one of these
+NBS = Reagent(name="NBS", abbreviation="NBS", min_volume=73, max_volume=100)
+DBDMH = Reagent(name="DBDMH", abbreviation="DBDMH", min_volume=73, max_volume=100)
+reagents = [NBS, DBDMH]
 ```
 
-We'll also need to register the compounds with the optimizer:
+Starting materials must have a fixed volume.  Reagents can have any volume in their allowed range; makeup solvent will be computed later to ensure every experiment has a constant volume.
+
+Now, let's define the additives and solvents:
 
 ```
-optimizer.starting_material = starting_material
-optimizer.product = product
-optimizer.internal_standard = internal_standard
+# define the additives
+# assume we will pick one of these
+hydrochloric_acid = Reagent(name="hydrochloric acid", abbreviation="HCl", min_volume=2, max_volume=50)
+sulfuric_acid = Reagent(name="sulfuric acid", abbreviation="H2SO4", min_volume=2, max_volume=50)
+picolinic_acid = Reagent(name="picolinic acid", abbreviation="Picolinic", min_volume=2, max_volume=50)
+phenylphosphonic_acid = Reagent(name="phenylphosphonic acid", abbreviation="Phenylphosphonic", min_volume=2, max_volume=50)
+phosphoric_acid = Reagent(name="phosphoric acid", abbreviation="Phosphoric", min_volume=2, max_volume=50)
+lactic_acid = Reagent(name="lactic acid", abbreviation="Lactic", min_volume=2, max_volume=50)
+acetic_acid = Reagent(name="acetic acid", abbreviation="Acetic", min_volume=2, max_volume=50)
+water = Reagent(name="water", abbreviation="Water", min_volume=2, max_volume=50)
+additives = [ hydrochloric_acid, sulfuric_acid, picolinic_acid, phenylphosphonic_acid,
+              phosphoric_acid, lactic_acid, acetic_acid, water ]
+
+# define the solvents
+# assume we will pick one of these
+solvents = [ "MeCN", "DMC" ]
 ```
 
-Finally, run the optimization:
+Notice that the starting materials, reagents, and additives are all of type `Reagent` but solvents are of type `str`.
+
+Now, we'll define the parameter space:
 
 ```
-optimizer.run()
+parameter_space = ParameterSpace(starting_material, reagents, solvents,
+                                    additives, light_stages=5,
+                                    total_volume=200)   # add solvent to make the final volume in each experiment 200 uL
 ```
 
-Here's the output:
+Here's how to define an experiment in the parameter space:
 
 ```
-starting opt
-==============
-parameter_values=[56.22086187592684, 'medium']
-new row ['experiment-1', 56.22086187592684, 2.0, 1]
-wait
-parsing /Users/kwaneu/research/zhulong/data/E-Z 2021-09-30 17-18-47/001-1-0312650-0713-SM.D/
-plateaued=True
-objective_function_value=0.0
-new row ['experiment-1', 56.22086187592684, 2.0, 0]
-existing
-     identifier  temperature  HCl  sampling
-0  experiment-1    56.220862  2.0         1
--
-==============
-parameter_values=[56.98726334005265, 'medium']
-new row ['experiment-2', 56.98726334005265, 2.0, 1]
-existing
-     identifier  temperature  HCl  sampling
-0  experiment-1    56.220862  2.0         0
--
-wait
-parsing /Users/kwaneu/research/zhulong/data/E-Z 2021-09-30 17-18-47/002-2-0312650-0713-BrPR.D/
-plateaued=True
-objective_function_value=1734.63611
-new row ['experiment-2', 56.98726334005265, 2.0, 0]
-existing
-     identifier  temperature  HCl  sampling
-0  experiment-1    56.220862  2.0         0
-1  experiment-2    56.987263  2.0         1
--
-==============
-parameter_values=[6.52613148585219, 'low']
-new row ['experiment-3', 6.52613148585219, 1.0, 1]
-existing
-     identifier  temperature  HCl  sampling
-0  experiment-1    56.220862  2.0         0
-1  experiment-2    56.987263  2.0         0
--
-wait
-parsing /Users/kwaneu/research/zhulong/data/E-Z 2021-09-30 17-18-47/003-3-0312650-0713-IS.D/
-plateaued=True
-objective_function_value=0.0
-new row ['experiment-3', 6.52613148585219, 1.0, 0]
-existing
-     identifier  temperature  HCl  sampling
-0  experiment-1    56.220862  2.0         0
-1  experiment-2    56.987263  2.0         0
-2  experiment-3     6.526131  1.0         1
--
-finished opt
+experiment1 = Experiment(parameter_space,                   # defines the parameter space this experiment is helping to explore
+                         solvent="DMC",                     # stocks will automatically be added in the correct solvent
+                         temperature=25,                    # in Celsius
+                         starting_material_volume=50,       # in uL
+                         reagent="NBS",                     # one of the reagents in the ParameterSpace (also accepted:
+                                                            # list index as zero-indexed integer or Reagent object)
+                         reagent_volume=30,                 # in uL
+                                                            # (also accepted: zero-indexed list index)
+                         additive="lactic acid",            # one of the additives in the ParameterSpace
+                                                            # (also accepted: zero-indexed list index or Reagent object)
+                         additive_volume=40,                # in uL
+                         light_stage=5)                     # int: 1-5
 ```
 
-### Optimizer Class
-
-Here are some more details on how to implement an `Optimizer`:
-
-- Extend the `optimizer.Optimizer` class.
-- `experiment_identifier` (`str`): every Experiment is assigned a unique string like "experiment-1".  Sampled points from the same experiment correspond to the same experiment identifier.
-- Register `chemstation.Compound` instances as needed with the `Optimizer` so that the `compute_objective_function_value` method can access them.  These are needed to determine which integrals are useful for calculating yields or selectivities.
-
-Here are useful fields in Optimizer:
-
-- `parameter_space` (`list(Parameter)`): the space to optimizer over
-- `chemstation_history` (`dict`): `experiment_identifier` : `list(Report)` (all the integration reports for this experiment)
-- `parameter_values_history` (`dict`): `experiment_identifier` : `list(float/str)` (stores the experimental parameters)
-- `objective_function_history` (`dict`): `experiment_identifier` : `float` (all the objective function values so far)
-
-Four abstract methods need implementation:
-
-- **`next_point(self)`**
-    Creates the next point in the parameter space as a list.  List members should be floats for `ContinuousParameter`s and strings for `CategoricalParameter`s.
-    The list should be ordered the same as `optimizer.parameter_space`.
-- **`compute_objective_function_value(self, experiment_identifier)`**
-    Returns the objective function value for a particular set of experimental parameters.  It might be helpful to use `self.chemstation_history` to compute this.
-- **`is_finished(self)`**
-    Returns True if the optimization is finished.
-- **`check_for_plateau(self, experiment_identifier)`**
-    Returns True if we should stop sampling for this set of experimental parameters.  It might be helpful to use `self.chemstation_history` to compute this.
-
-See `DummyOptimizer` in `optimizer.py` for an example.
-
-### Base Classes
-
-Here's some code that demonstrates some of the base classes in `zhulong`.  Let's define one continuous and one categorical parameter:
+These values will be automatically converted into the correct format in the ChemSpeed csv file.  The order of columns is hardcoded into `experiment.get_row()`.  This function produces the csv column names (`headings`) and the values for the row (`values`):
 
 ```
-temperature_template = ContinuousParameter(name="temperature", min_value=-10.0, max_value=100.0)
-additive_HCl_template = CategoricalParameter(name="HCl", allowed_levels={"low":1.0, "medium":2.0, "high":3.0})
+headings, values = experiment.get_row(sampling=1)
+for h,v in zip(headings,values):
+    print(f"{h} : {v}")
 ```
 
-Thus, temperature can be between -10 and 100 and HCl can be low (1.0), medium (2.0), or high (3.0).  The numbers will be written into the ChemSpeed `.csv` file directly, so whatever units are appropriate there are appropriate here.
-
-Note that when the value of the HCl parameter is "low" the value 1.0 will be written to the file.
-
-Let's come up with a few experiments to run:
+Before we can run the experiment, we'll need to tell *zhulong* how to compute the yield.  First, we'll need to tell it where the HPLC peaks are:
 
 ```
-conditions_list = [ [ 0.0, "low" ], [ 20.0, "low"], [ 0.0, "high" ], [ 20.0, "high" ] ]
-parameter_templates = [ temperature_template, additive_HCl_template ]
-experiments = []
-for i, conditions in enumerate(conditions_list):
-    identifier = f"experiment-{i}"
-    parameters = [ p.copy() for p in parameter_templates ]
-    for p,c in zip(parameters,conditions):
-        p.value = c
-    experiment = Experiment(identifier=identifier, parameters=parameters, sampling=True)
-    experiments.append(experiment)
+starting_material_peak = Peak(name="starting material", min_retention_time=1.28, max_retention_time=1.48)
+product_peak = Peak(name="bromo product", min_retention_time=1.53, max_retention_time=1.73)
+internal_standard_peak = Peak(name="internal standard", min_retention_time=2.05, max_retention_time=2.25)
 ```
 
-This tries a 2x2 factorial grid of 0.0 and 20.0 (temperature) and low and high (HCl).  Each experiment is assigned a corresponding `Experiment` object.  Note that every experiment is assigned a name ("experiment-1", "experiment-2", etc.).  Also note that each parameter is deep copied from a template, so that mutating the parameter only changes its value for its assigned Experiment.  However, there should be no reason to change Parameters once created.  Fresh ones should be made for new Experiments.
-
-To write the Experiments to the `.csv` file:
+Then, we need to define a function that converts a ChemStation report into a yield.  In this test, we'll just take the "yield" as the raw product integral and multiply by the response factor (1.0) here.  In production, we should measure the response factor and calculate the yield as response_factor * product/IS:
 
 ```
-# write to file
-for experiment in experiments:
-    experiment.update_csv(filename)
+# for testing, just report the raw integral of the product peak
+# but could also convert to chemical yield via response factor
+yield_function = get_yield_function(product_peak, internal_standard_peak=None, response_factor=1.0)
+#yield_function = get_yield_function(product_peak, internal_standard_peak, response_factor=10.0)
 ```
 
-To update an experiment, use the `experiment.update_csv(filename)` method.  This might be used to stop sampling:
+Next, create an object to represent the ChemSpeed robot:
 
 ```
-# update an experiment
-experiments[1].sampling=False
-experiments[1].update_csv(filename)
+chemspeed = ChemSpeed(chemspeed_csv_filename="temp.csv",
+                      chemstation_folder="../data/E-Z 2021-09-30 17-18-47",
+                      yield_function=yield_function,
+                      overwrite_existing_chemspeed_csv=True,
+                      ignore_existing_chemstation_folders=False,
+                      polling_interval=1)
 ```
+
+The volumes will be written to `temp.csv`
+
+Finally, to run the experiment:
+
+```
+chemspeed.run_experiment(experiment1)
+```
+
+*Zhulong* will check `chemstation_folder` for new `.D` folders every `polling_interval` seconds.  If `ignore_existing_chemstation_folders` is set to `True`, then all the `.D` folders that exist when the `ChemSpeed` object is initialized will be ignored.
+
+Note that `plateau_function` is not set here, which means it takes on its default value of `None`.  When there is no plateau function, a plateau is assumed to have occurred after one sample and a `0` will be written to the `Sampling` column in the csv file after the first new `.D` folder is parsed.  Optionally, you can provide a function that takes a list of yields and returns True if we have reached a plateau.  If a plateau has not been reached, then sampling will continue (i.e., by leaving the csv file with `Sampling` set to 1).
+
+You can access previous results in `chemspeed.history`, which is a `dict` in which the keys are `Experiment` objects and the values are lists of yields (as `float`).
+
+(No code for optimizers is provided.  Currently, some debugging message will be printed when `run_experiment()` is executed.)
 
 ### Authors
 

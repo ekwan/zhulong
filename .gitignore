@@ -2,3 +2,4 @@
 *.pyc
 ~$*.xlsx
 temp.csv
+*.swp
