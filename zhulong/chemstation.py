@@ -47,7 +47,7 @@ class AgilentReport():
             # sample:
             #
             #   Peak RetTime Type  Width     Area      Height     Area  
-            #   [min]        [min]   [mAU*s]     [mAU]        %
+            #         [min]        [min]   [mAU*s]     [mAU]        %
             #            1         2         3         4         5         6
             #  0123456789012345678901234567890123456789012345678901234567890
             # "----|-------|----|-------|----------|----------|--------|"
@@ -55,7 +55,7 @@ class AgilentReport():
             if in_block:
                 try:
                     retention_time = float(line[5:12])
-                    area = float(line[26:36])
+                    area = float(line[48:56])
                 except:
                     raise ValueError(f"Error parsing integrals in {filename} for this line:\n{line}")
                 row = [retention_time, area]

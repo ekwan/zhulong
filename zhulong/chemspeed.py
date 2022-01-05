@@ -13,9 +13,9 @@ from experiment import Experiment
 # ignore_existing_chemstation_folders (bool) : whether to ignore any existing
 #                                              chemstation .D folders and only parse new ones
 # yield_function (function) : parses the specified .D folder and returns a yield
-# plateau function (function) : receives a list of yields and returns True if we are plateaued and should stop sampling
+# plateau_function (function) : receives a list of yields and returns True if we are plateaued and should stop sampling
 #                               (if None, only one sample will be drawn) 
-# polling interval (int) : how often in seconds to check the chemstation folder for .D files
+# polling_interval (int) : how often in seconds to check the chemstation folder for .D files
 #
 # additional fields:
 # chemstation_parsed_folders (list): names of .D directories that have already been parsed
