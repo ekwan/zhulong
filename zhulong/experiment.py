@@ -6,7 +6,8 @@ class Reagent():
     # abbreviation (str) : abbreviation for reagent
     # min_volume (int) : minimum volume in uL
     # max_volume (int) : maximum volume in uL
-    def __init__(self, name, abbreviation, min_volume=None, max_volume=None):
+    # concentration (float) : in mol/L (optional)
+    def __init__(self, name, abbreviation, min_volume=None, max_volume=None, concentration=None):
         assert isinstance(name, str)
         assert len(name) > 0
         self.name = name
@@ -19,10 +20,19 @@ class Reagent():
         assert max_volume >= min_volume
         self.min_volume = min_volume
         self.max_volume = max_volume
+        if concentration is not None:
+            assert isinstance(concentration, float)
+            assert concentration > 0
+        self.concentration = concentration
 
 # represents the space of parameters to explore in an optimization
 class ParameterSpace():
-    def __init__(self, starting_material, reagents, solvents, additives, light_stages, total_volume):
+    def __init__(self, starting_material,
+                       reagents,
+                       solvents,
+                       additives,
+                       light_stages,
+                       total_volume):
         assert isinstance(starting_material, Reagent)
         assert starting_material.min_volume == starting_material.max_volume
         self.starting_material = starting_material
@@ -81,7 +91,7 @@ class Experiment():
                        starting_material_volume,
                        reagent, reagent_volume,
                        additive, additive_volume,
-                       light_stage):
+                       light_stage, factory=False):
         assert isinstance(parameter_space, ParameterSpace)
         self.parameter_space = parameter_space
 
@@ -106,7 +116,7 @@ class Experiment():
 
         self.starting_material = self.parameter_space.starting_material
         assert isinstance(starting_material_volume, int)
-        assert starting_material_volume > 0
+        assert starting_material_volume == parameter_space.starting_material.min_volume, "check starting material volume"
         self.starting_material_volume = starting_material_volume
 
         if isinstance(reagent, str):
@@ -126,7 +136,9 @@ class Experiment():
             raise ValueError(f"unexpected reagent type: {type(reagent)}")
 
         assert isinstance(reagent_volume, int)
-        assert reagent_volume > 0
+        if not factory:
+            assert self.reagent.min_volume <= reagent_volume <= self.reagent.max_volume,\
+               f"reagent volume of {reagent_volume} is outside the range {self.reagent.min_volume}-{self.reagent.max_volume}"
         self.reagent_volume = reagent_volume
 
         if additive is None:
@@ -150,17 +162,75 @@ class Experiment():
                 raise ValueError("unexpected additive")
 
             assert isinstance(additive_volume, int)
-            assert additive_volume > 0
+            if not factory:
+                assert self.additive.min_volume <= additive_volume <= self.additive.max_volume
             self.additive_volume = additive_volume
 
-        self.solvent_volume = self.parameter_space.total_volume - starting_material_volume - reagent_volume - additive_volume
-        assert self.solvent_volume >= 0
+        total_volume = starting_material_volume + reagent_volume + additive_volume
+        self.solvent_volume = self.parameter_space.total_volume - total_volume
+        assert self.solvent_volume >= 0, f"total volume for this experiment is {total_volume}, which exceeds the max of {self.parameter_space.total_volume}"
 
         if isinstance(light_stage, int):
             assert 1 <= light_stage <= parameter_space.light_stages
             self.light_stage = light_stage
         else:
             raise ValueError("unexpected light_stage")
+
+    def __str__(self):
+        return_string  = f"solv={self.solvent} ({self.solvent_volume} uL) temp={self.temperature}°C "
+        return_string += f"SM = {self.starting_material_volume} uL "
+        return_string += f"reagent={self.reagent.abbreviation} (vol={self.reagent_volume} uL"
+        if hasattr(self, "reagent_equivalents"):
+            return_string += f", {self.reagent_equivalents:.2f} equiv"
+        return_string += f") "
+        return_string += f"additive={self.additive.abbreviation} (vol={self.additive_volume} uL"
+        if hasattr(self, "additive_mole_percent"):
+            return_string += f", {self.additive_mole_percent:.0f} mol%"
+        return_string += f") "
+        return_string += f"light={self.light_stage}"
+        return return_string
+
+    # convenience factory method to create experiments using molar equivalents and mole percent instead of volumes
+    @staticmethod
+    def create(parameter_space, solvent, temperature, starting_material_volume, reagent,
+               reagent_equivalents, additive, additive_mole_percent, light_stage):
+        # make an experiment with minimum volumes for reagent and additive then adjust the volumes
+        # based on the requested equivalents
+        experiment = Experiment(parameter_space, solvent, temperature, starting_material_volume,
+                                reagent, 1, additive, 1, light_stage, factory=True)
+
+        # check that we have enough information
+        assert parameter_space.starting_material.concentration is not None, "must specify starting material concentration"
+        assert experiment.reagent.concentration is not None, "must specify reagent concentration"
+        assert experiment.additive.concentration is not None, "must specify the additive concentration"
+
+        # sanity checks
+        assert reagent_equivalents >= 0
+        assert additive_mole_percent >= 0
+
+        # uL * mol / L = umol
+        starting_material_concentration = parameter_space.starting_material.concentration
+        starting_material_micromoles = starting_material_volume * starting_material_concentration
+
+        # calculate reagent volume
+        reagent_concentration = experiment.reagent.concentration
+        reagent_volume_uL = int(starting_material_micromoles * reagent_equivalents / reagent_concentration)
+        if reagent_volume_uL < experiment.reagent.min_volume or reagent_volume_uL > experiment.reagent.max_volume:
+            raise ValueError("requested reagent equivalents translates to a volume that is outside the allowed range")
+        experiment.reagent_volume = reagent_volume_uL
+        experiment.reagent_equivalents = reagent_equivalents
+
+        # calculate additive volume
+        additive_concentration = experiment.additive.concentration
+        additive_equivalents = additive_mole_percent / 100
+        additive_volume_uL = int(starting_material_micromoles * additive_equivalents / additive_concentration)
+        if additive_volume_uL < experiment.additive.min_volume or additive_volume_uL > experiment.additive.max_volume:
+            raise ValueError("requested additive mol% translates to a volume that is outside the allowed range")
+        experiment.additive_volume = additive_volume_uL
+        experiment.additive_mole_percent = additive_mole_percent
+
+        # return result
+        return experiment
 
     # get new row for chemspeed csv file
     # the order of columns is defined here

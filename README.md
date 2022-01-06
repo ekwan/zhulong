@@ -85,6 +85,26 @@ for h,v in zip(headings,values):
     print(f"{h} : {v}")
 ```
 
+Alternatively, we can define an experiment in terms of molar equivalents (for the reagent) or mol% (for the additive).  This requires concentrations to be provided in the reagent definitions:
+
+```
+NBS = Reagent(name="NBS", abbreviation="NBS", min_volume=73, max_volume=100, concentration=0.945)
+...
+experiment2 = Experiment.create(
+                         parameter_space,                   # defines the parameter space this experiment is helping to explore
+                         solvent="MeCN",                    # stocks will automatically be added in the correct solvent
+                         temperature=25,                    # in Celsius
+                         starting_material_volume=100,      # in uL
+                         reagent="DBDMH",                   # one of the reagents in the ParameterSpace (also accepted:
+                                                            # list index as zero-indexed integer or Reagent object)
+                         reagent_equivalents=1.40,          # in equivalents
+                                                            # (also accepted: zero-indexed list index)
+                         additive="lactic acid",            # one of the additives in the ParameterSpace
+                                                            # (also accepted: zero-indexed list index or Reagent object)
+                         additive_mole_percent=5,           # in mol%
+                         light_stage=2)                     # int: 1-5
+```
+
 Before we can run the experiment, we'll need to tell *zhulong* how to compute the yield.  First, we'll need to tell it where the HPLC peaks are:
 
 ```
@@ -113,12 +133,40 @@ chemspeed = ChemSpeed(chemspeed_csv_filename="temp.csv",
                       polling_interval=1)
 ```
 
-The volumes will be written to `temp.csv`
+The volumes will be written to `temp.csv`.
 
 Finally, to run the experiment:
 
 ```
-chemspeed.run_experiment(experiment1)
+experiments = [experiment1, experiment2]
+for e in experiments:
+    print("running experiment")
+    print(e)
+    chemspeed.run_experiment(e)
+    print("--------")
+```
+
+The output is:
+
+```
+running experiment
+solv=DMC (35 uL) temp=25°C SM = 100 uL reagent=NBS (vol=75 uL) additive=Lactic (vol=40 uL) light=5
+waiting
+checking for new results
+found folder ../data/E-Z 2021-09-30 17-18-47/002-2-0312650-0713-BrPR.D
+parsing ../data/E-Z 2021-09-30 17-18-47/002-2-0312650-0713-BrPR.D
+yield is 51.8366
+plateaued=True
+--------
+running experiment
+solv=MeCN (148 uL) temp=25°C SM = 100 uL reagent=DBDMH (vol=93 uL, 1.40 equiv) additive=Lactic (vol=10 uL, 5 mol%) light=2
+waiting
+checking for new results
+found folder ../data/E-Z 2021-09-30 17-18-47/003-3-0312650-0713-IS.D
+parsing ../data/E-Z 2021-09-30 17-18-47/003-3-0312650-0713-IS.D
+yield is 0.0
+plateaued=True
+--------
 ```
 
 *Zhulong* will check `chemstation_folder` for new `.D` folders every `polling_interval` seconds.  If `ignore_existing_chemstation_folders` is set to `True`, then all the `.D` folders that exist when the `ChemSpeed` object is initialized will be ignored.
