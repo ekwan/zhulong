@@ -126,10 +126,18 @@ class ChemSpeed():
             df = DataFrame([values], columns=headings)
             self._chemspeed_df = df
         else:
-            # append row
             # note: not checking for duplicate experiment IDs
             df = self._chemspeed_df
-            df.loc[len(df)] = values
+            this_id = int(values[0])
+            last_id = int(df.iloc[-1,0])
+            #print(this_id, type(this_id), last_id, type(last_id), this_id==last_id)
+            if this_id == last_id:
+                # replace last row
+                df.loc[len(df)-1] = values
+            else:
+                # append new row
+                df.loc[len(df)] = values
+            #print(df)
 
             assert list(df.columns) == headings
         df.to_csv(self.chemspeed_csv_filename, index=False)
