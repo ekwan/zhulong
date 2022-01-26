@@ -80,6 +80,12 @@ class ChemSpeed():
         self.append_to_chemspeed_csv(headings, values)
 
         # loop until plateau_function reports that we should stop
+        experiment.history = {
+                "times" : [],   # in epoch seconds
+                "values" : [],  # objective function values (yields)
+            }
+        times = experiment.history["times"]
+        values = experiment.history["values"]
         while True:
             # wait
             print("waiting")
@@ -99,6 +105,7 @@ class ChemSpeed():
                 self.chemstation_parsed_folders.append(directory)
                 new_directory_found = True
                 print(f"found folder {directory}")
+                folder_time = os.path.getmtime(directory)
                 break
             if not new_directory_found:
                 print("didn't find any new results")
@@ -107,7 +114,9 @@ class ChemSpeed():
             # parse and store the data from ChemStation
             print(f"parsing {directory}")
             chemical_yield = self.yield_function(directory)
-            print(f"yield is {chemical_yield}")
+            times.append(folder_time)
+            values.append(chemical_yield)
+            print(f"yield is {chemical_yield} (recorded at {folder_time} s since the epoch)")
 
             # see if the experiment has plateaued
             plateaued = self.plateau_function(history)
