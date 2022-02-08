@@ -35,7 +35,8 @@ class ParameterSpace():
                        light_stages,
                        total_volume,
                        min_temperature,
-                       max_temperature):
+                       max_temperature,
+                       temperature_step_size):
         assert isinstance(starting_material, Reagent)
         assert starting_material.min_volume == starting_material.max_volume
         self.starting_material = starting_material
@@ -72,9 +73,12 @@ class ParameterSpace():
 
         assert isinstance(min_temperature, (int,float))
         assert isinstance(max_temperature, (int,float))
+        assert isinstance(temperature_step_size, (int,float))
+        assert temperature_step_size > 0
         assert max_temperature >= min_temperature
         self.min_temperature = int(min_temperature)
         self.max_temperature = int(max_temperature)
+        self.temperature_step_size = int(temperature_step_size)
 
         self.experiment_count = 0
 
@@ -103,6 +107,7 @@ class ParameterSpace():
         bounds_dict["temperature"] = {
             "min" : self.min_temperature,
             "max" : self.max_temperature,
+            "step_size" : self.temperature_step_size,
         }
 
         bounds_dict["solvents"] = {
@@ -236,7 +241,7 @@ class Experiment():
         return_string += f"light={self.light_stage}"
         return return_string
 
-    def get_json_string(self):
+    def get_dict(self):
         json_dict = {
             "solvent" : self.solvent,
             "temperature" : self.temperature,
@@ -250,8 +255,10 @@ class Experiment():
             "history_times" : str(self.history["times"]),
             "history_values" : str(self.history["values"]),
         }
+        return json_dict
 
-        return json.dumps(json_dict, indent=2)
+    def get_json_string(self):
+        return json.dumps(self.get_dict(), indent=2)
 
     # convenience factory method to create experiments using molar equivalents and mole percent instead of volumes
     @staticmethod

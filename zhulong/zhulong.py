@@ -41,8 +41,9 @@ solvents = [ "MeCN", "DMC" ]
 parameter_space = ParameterSpace(starting_material, reagents, solvents,
                                  additives, light_stages=5,
                                  total_volume=250,          # add solvent to make the final volume in each experiment 250 uL
-                                 min_temperature=0,         # in C
-                                 max_temperature=100,       # in C
+                                 min_temperature=-30,         # in C
+                                 max_temperature=40,       # in C
+                                 temperature_step_size=5   # in C
                                 )
 
 # for convenience, here is a dictionary containing the bounds
@@ -96,9 +97,10 @@ yield_function = get_yield_function(product_peak, internal_standard_peak=None, r
 #yield_function = get_yield_function(product_peak, internal_standard_peak, response_factor=10.0)
 
 # represents the ChemSpeed robot
-chemspeed = ChemSpeed(chemspeed_csv_filename="temp.csv",
-                      chemstation_folder="../data/E-Z 2021-09-30 17-18-47",
+chemspeed = ChemSpeed(chemspeed_csv_filename="M:\\temp.csv",
+                      chemstation_folder="C:\\Users\\Public\\Documents\\ChemStation\\1\\Data",
                       yield_function=yield_function,
+                      plateau_function=None,
                       overwrite_existing_chemspeed_csv=True,
                       ignore_existing_chemstation_folders=False,
                       polling_interval=1)
@@ -116,5 +118,7 @@ for e in experiments:
     print(f"{history['values']=}")
     print()
     print("json looks like:")
+    # to get experiment parameters in dictionary form
+    # print(e.get_dict())
     print(e.get_json_string())
     print("--------")

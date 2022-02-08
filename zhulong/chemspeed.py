@@ -19,7 +19,6 @@ from experiment import Experiment
 #
 # additional fields:
 # chemstation_parsed_folders (list): names of .D directories that have already been parsed
-# history (dict): {Experiment : [yields]} (multiple yields will be stored if multiple samples were taken)
 class ChemSpeed():
     def __init__(self, chemspeed_csv_filename,
                        chemstation_folder,
@@ -64,16 +63,11 @@ class ChemSpeed():
         assert polling_interval > 0
         self.polling_interval = polling_interval
 
-        self.chemstation_history = {}
 
     # runs one experiment and blocks until it is finished
     # experiment (Experiment) : the experiment to run
-    # returns history (list of yields)
     def run_experiment(self, experiment):
         assert isinstance(experiment, Experiment)
-        assert experiment not in self.chemstation_history, "experiment already run"
-        self.chemstation_history[experiment] = []
-        history = self.chemstation_history[experiment]
 
         # write row with sampling turned on
         headings, values = experiment.get_row(sampling=1)
@@ -119,14 +113,14 @@ class ChemSpeed():
             print(f"yield is {chemical_yield} (recorded at {folder_time} s since the epoch)")
 
             # see if the experiment has plateaued
-            plateaued = self.plateau_function(history)
+            plateaued = self.plateau_function(experiment.history)
             print(f"{plateaued=}")
             if plateaued:
                 # write row with sampling turned off
                 headings, values = experiment.get_row(sampling=0)
                 self.append_to_chemspeed_csv(headings, values)
+                return
 
-                return history
 
     # appends to csv file, creating the csv file if it does not already exist
     def append_to_chemspeed_csv(self, headings, values):
