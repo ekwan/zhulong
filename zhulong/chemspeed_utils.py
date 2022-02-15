@@ -10,28 +10,34 @@ values_all = [0.49, 13.57, 21.37, 26.58, 30.19, 32.82, 33.82, 34.56, 35.35, 35.1
 
 #plateau is at timepoint==45, which is timepoints_all[9]
 
-history = {'t' : timepoints_all[:5], 'v': values_all[:5]}
-plateau_function(history)
+history = {'times' : timepoints_all[:5], 'values': values_all[:5]}
+plateau_function_1(history)
 
 for i in range(len(timepoints_all)):
-    history = {'t' : timepoints_all[:(i+1)], 'v': values_all[:(i+1)]}
-    print("i = ", i, "time:", timepoints_all[i],"plateau: ", plateau_function(history))
+    history = {'times' : timepoints_all[:(i+1)], 'values': values_all[:(i+1)]}
+    print("i = ", i, "time:", timepoints_all[i],"plateau: ", plateau_function_1(history))
 
+Add to zhulog.py:
+from chemspeed_utils import plateau_function_1
 """
 
-def plateau_function(history):
+def plateau_function_1(history):
+    print("Plateau Algorithm No.1")
     u0 = 0.00734 # hyperparameter for plateau detection algorithm
+    max_n_samples = 10 # additional termination criterion
     plateau_flag = False # plateau indicator to be return
-    # To-Do: get the list of timepoints and experimental outcome values from history
-    #timepoints, values = a_function_of_history(history)
-    timepoints, values = history['t'],history['v']
+    timepoints = history['times']
+    values = history['values']
     n = len(timepoints) # the algorithm requires at least two measurements 
-    if n >= 2:
-        diff_value_t = values[-1]-values[-2]
-        sigma_t = (values[-1]+values[-2])*0.5*u0
-        w = 1.96*math.sqrt(2)*sigma_t
-        if abs(diff_value_t) <= w:
-            plateau_flag = True
-        else:
-            plateau_flag = False
+    if n >= max_n_samples:
+        plateau_flag = True
+    else:
+        if n >= 2:
+            diff_value_t = values[-1]-values[-2]
+            sigma_t = (values[-1]+values[-2])*0.5*u0
+            w = 1.96*math.sqrt(2)*sigma_t
+            if abs(diff_value_t) <= w:
+                plateau_flag = True
+            else:
+                plateau_flag = False
     return plateau_flag
