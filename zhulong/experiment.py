@@ -87,8 +87,9 @@ class ParameterSpace():
 
         reagent = self.reagents[0]
         min_equivalents, max_equivalents, step_size = get_bounds(self.starting_material, reagent)
-        bounds_dict["reagent"] = {
-            "name" : reagent.name,
+        bounds_dict["reagents"] = {
+            #"name" : reagent.name,
+            "names" : [ reagent.name for reagent in self.reagents ],# YX: make parameter_space more complete???
             "min_equivalents" : min_equivalents,
             "max_equivalents" : max_equivalents,
             "step_size" : step_size,
