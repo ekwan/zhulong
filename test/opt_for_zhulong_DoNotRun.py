@@ -24,7 +24,7 @@ for r in range(n_total):
     print("running experiment")
     print(experiment_r)
     chemspeed.run_experiment(experiment_r)
-    history = e.history
+    history = experiment_r.history
     print("final result is:")
     print(f"{history['times']=}")
     print(f"{history['values']=}")
