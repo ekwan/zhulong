@@ -31,12 +31,13 @@ with open('parameter_bounds.pkl', 'rb') as f:
     parameter_bounds = pickle.load(f)
 
 method = 'LM'# or'RS'
-n_total = 24
+initMethod = 'batch8' # 'random' or 'batch8' for LM
+n_total = 16
 
 dat = pd.DataFrame()
 f_best = 0
 for r in range(n_total):
-    new_para = optimization(dat, parameter_bounds,method)
+    new_para = optimization(dat, parameter_bounds,method, seed = 999, initMethod = initMethod)
     df_new_para = pd.DataFrame({k: [v] for k, v in new_para.items()})
     X_new, cols_X_new = preprocessing_lm(df_new_para,X_only = True)
     f_sim = simulation_fun(X_new, cols_X_new, cols_subset, reg)

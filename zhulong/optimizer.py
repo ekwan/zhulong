@@ -10,8 +10,8 @@ Inputs:
 Outputs:
     newPara: A dictionary contains the candidate experimental condition for next round
 
-Example Usage: 
-Example Usage from zhulong.py:
+Example Usage: ../test/simulation.py
+Example Usage from zhulong.py: ../test/opt_for_zhulong_DoNotRun.py
 
 """
 
@@ -86,6 +86,7 @@ def initial_batch_8(parameter_bounds, seed):
             det_list.append(np.linalg.det(np.matmul(np.transpose(X),X)))
         ind_max = det_list.index(max(det_list))
         df_init = pd.concat([df_init_factors, df_init_list[ind_max]], axis = 1).reset_index(drop=True)
+        df_init.drop(columns=['Reagent_DBDMH','Solvent_DMC'], inplace = True)
         df_init.to_csv(saveCSVFileName, index = False)
     return df_init
     

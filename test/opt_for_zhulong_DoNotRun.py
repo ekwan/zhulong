@@ -2,13 +2,14 @@
 
 parameter_bounds = parameter_space.get_bounds_dict()
 method = 'LM'# or'RS'
+initMethod = 'batch8' # 'random' or 'batch8' for LM
 n_total = 24 # total iterations
 
 dat = pd.DataFrame()
 f_best = 0
 for r in range(n_total):
     # get a set of new parameters for round r
-    para_r = optimization(dat, parameter_bounds,method) 
+    para_r = optimization(dat, parameter_bounds,method, seed = 1234, initMethod = initMethod) 
     df_para_r = pd.DataFrame({k: [v] for k, v in para_r.items()})
     # define an experiment object for this round
     experiment_r = Experiment.create(
