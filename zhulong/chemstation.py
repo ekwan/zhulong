@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from glob import glob
 from typing import List
 
+POLLING_INTERVAL = 5
+
 # represents a ChemStation integration report
 class AgilentReport():
     # fields:
@@ -15,8 +17,10 @@ class AgilentReport():
     def __init__(self, folder):
         # look for the report file
         filename = f"{folder}/Report.TXT"
-        if not os.path.exists(filename):
-            raise ValueError(f"Error: can't find report file {filename}!")
+
+        while not os.path.exists(filename):
+            print(f"Looking for {filename}...", end="\r")
+        print(f"\nFound {filename}...parsing...")
         self.filename = filename
 
         # read the report file into the lines array
