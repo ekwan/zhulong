@@ -24,7 +24,7 @@ class ChemSpeed():
                        chemstation_folder,
                        yield_function,
                        plateau_function=None,
-                       overwrite_existing_chemspeed_csv=False,
+                       overwrite_existing_chemspeed_csv=True,
                        ignore_existing_chemstation_folders=True,
                        polling_interval=1):
         assert isinstance(chemspeed_csv_filename, str)
