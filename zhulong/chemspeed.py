@@ -38,7 +38,7 @@ class ChemSpeed():
         self.ignore_existing_chemstation_folders = ignore_existing_chemstation_folders
 
         assert isinstance(chemstation_folder, str)
-        assert os.path.isdir(chemstation_folder), "chemstation folder does not exist"
+        # assert os.path.isdir(chemstation_folder), "chemstation folder does not exist"
         self.chemstation_folder = chemstation_folder
 
         assert isinstance(ignore_existing_chemstation_folders, bool)
@@ -82,9 +82,10 @@ class ChemSpeed():
         values = experiment.history["values"]
         while True:
             # wait
-            print("waiting")
+            # print("waiting")
+            # print(".",end=None)
             sleep(self.polling_interval)
-            print("checking for new results")
+            # print("checking for new results")
 
             # see if there are new results from this run
             # if there is more than one match, the oldest file that has not been
@@ -98,11 +99,11 @@ class ChemSpeed():
                 # found an unparsed directory, so parse it and mark it as parsed
                 self.chemstation_parsed_folders.append(directory)
                 new_directory_found = True
-                print(f"found folder {directory}")
+                print(f"\nfound folder {directory}")
                 folder_time = os.path.getmtime(directory)
                 break
             if not new_directory_found:
-                print("didn't find any new results")
+                # print("didn't find any new results")
                 continue
 
             # parse and store the data from ChemStation

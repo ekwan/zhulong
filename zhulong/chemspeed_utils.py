@@ -24,7 +24,7 @@ from chemspeed_utils import plateau_function_1
 def plateau_function_1(history):
     print("Plateau Algorithm No.1")
     u0 = 0.00734 # hyperparameter for plateau detection algorithm
-    max_n_samples = 10 # additional termination criterion
+    max_n_samples = 12 # additional termination criterion
     plateau_flag = False # plateau indicator to be return
     timepoints = history['times']
     values = history['values']

@@ -1,0 +1,9 @@
+Reagent,Solvent,Additive,Reagent_equiv,AdditiveLoading,Temperature,Stage
+NBS,MeCN,picolinic acid,1.1999999999999993,13.0,-30.0,3
+DBDMH,DMC,acetic acid,1.394999999999998,25.0,-10.0,3
+NBS,DMC,phenylphosphonic acid,1.1999999999999993,1.0,5.0,1
+DBDMH,MeCN,lactic acid,1.4999999999999973,7.0,-10.0,4
+NBS,MeCN,water,1.394999999999998,19.0,40.0,2
+DBDMH,DMC,sulfuric acid,1.3049999999999986,13.0,20.0,2
+NBS,DMC,hydrochloric acid,1.3049999999999986,19.0,20.0,5
+DBDMH,MeCN,phosphoric acid,1.095,7.0,5.0,4
