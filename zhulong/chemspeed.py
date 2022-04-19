@@ -29,9 +29,10 @@ class ChemSpeed():
                        polling_interval=1):
         assert isinstance(chemspeed_csv_filename, str)
         assert len(chemspeed_csv_filename) > 0
+        assert isinstance(overwrite_existing_chemspeed_csv, bool)
         assert isinstance(ignore_existing_chemstation_folders, bool)
-        if ignore_existing_chemstation_folders and os.path.exists(chemspeed_csv_filename):
-            raise ValueError("chemstation csv already exists (set overwrite_existing_chemspeed_csv=True to overwrite)")
+        if not overwrite_existing_chemspeed_csv and os.path.exists(chemspeed_csv_filename):
+            raise ValueError("chemspeed csv already exists (set overwrite_existing_chemspeed_csv=True to overwrite)")
         if os.path.exists(chemspeed_csv_filename):
             os.remove(chemspeed_csv_filename)
         self.chemspeed_csv_filename = chemspeed_csv_filename

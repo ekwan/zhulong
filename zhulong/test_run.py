@@ -56,7 +56,7 @@ parameter_space = ParameterSpace(starting_material, reagents, solvents,
 # print(bounds_dict_string)
 
 # define HPLC peaks
-starting_material_peak = Peak(name="starting material", min_retention_time=0.95, max_retention_time=1.05)
+starting_material_peak = Peak(name="starting material", min_retention_time=0.92, max_retention_time=1.05)
 product_peak = Peak(name="bromo product", min_retention_time=1.20, max_retention_time=1.35)
 dibromo_peak = Peak(name="dibromo product", min_retention_time=1.42, max_retention_time=1.52)
 #internal_standard_peak = Peak(name="internal standard", min_retention_time=1.40, max_retention_time=1.50)

@@ -89,12 +89,13 @@ experiment2 = Experiment.create(
 # define HPLC peaks
 starting_material_peak = Peak(name="starting material", min_retention_time=1.28, max_retention_time=1.48)
 product_peak = Peak(name="bromo product", min_retention_time=1.53, max_retention_time=1.73)
-internal_standard_peak = Peak(name="internal standard", min_retention_time=2.05, max_retention_time=2.25)
+dibromo_peak = Peak(name="dibromo impurity", min_retention_time=2.05, max_retention_time=2.25)
+# internal_standard_peak = Peak(name="internal standard", min_retention_time=2.05, max_retention_time=2.25)
 
-# for testing, just report the raw integral of the product peak
-# but could also convert to chemical yield via response factor
+# for testing, just report the area % of the product peak
+# but could also report the raw area count and convert to chemical yield via response factor
 yield_function = get_yield_function(product_peak, internal_standard_peak=None, response_factor=1.0)
-#yield_function = get_yield_function(product_peak, internal_standard_peak, response_factor=10.0)
+# yield_function = get_yield_function(product_peak, internal_standard_peak, response_factor=10.0)
 
 # represents the ChemSpeed robot
 chemspeed = ChemSpeed(chemspeed_csv_filename="temp.csv",

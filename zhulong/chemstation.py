@@ -5,6 +5,7 @@ import os
 from dataclasses import dataclass
 from glob import glob
 from typing import List
+import time
 
 POLLING_INTERVAL = 5
 
@@ -20,6 +21,8 @@ class AgilentReport():
 
         while not os.path.exists(filename):
             print(f"Looking for {filename}...", end="\r")
+            time.sleep(POLLING_INTERVAL)
+        time.sleep(POLLING_INTERVAL)
         print(f"\nFound {filename}...parsing...")
         self.filename = filename
 
