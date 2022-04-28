@@ -147,7 +147,7 @@ def preprocessing_GP(dat, X_only = True):
     # add numerical descriptor for Additive if missing
     if not 'Additive_pKa' in dat:
         # Load numerical descriptor for the Additive factor
-        df_Additive_desc = pd.read_csv("../2022-02-15_data_v3/data_processed/df_Additive_desc.csv")
+        df_Additive_desc = pd.read_csv("../data/df_Additive_desc.csv")
         # To match the hard-coded names in zhulong:
         df_Additive_desc.rename(columns = {'Additive':'Additive_oldName'}, inplace = True)
         df_Additive_desc = pd.concat([pd.DataFrame({'Additive':['hydrochloric acid', 'sulfuric acid', 'picolinic acid', 'phenylphosphonic acid', 
