@@ -6,6 +6,7 @@ import pandas as pd
 from optimizer import *
 from optimizer_utils import *
 from chemspeed_utils import plateau_function_1
+import pickle
 
 # define the starting material
 starting_material = Reagent(name="starting material", abbreviation="SM", min_volume=100, max_volume=100, concentration=0.630)
@@ -82,6 +83,7 @@ parameter_bounds = parameter_space.get_bounds_dict()
 method = 'LM'# or'RS'
 initMethod = 'batch8' # 'random' or 'batch8' for LM
 n_total = 48 # total iterations
+all_experiments = []
 
 dat = pd.DataFrame()
 f_best = 0
@@ -107,6 +109,9 @@ for r in range(n_total):
     print("final result is:")
     print(f"{history['times']=}")
     print(f"{history['values']=}")
+    all_experiments.append(experiment_r)
+    with open("APO_timecourse.pkl","wb") as file:
+        pickle.dump(all_experiments, file)
     f_r = history['values'][-1]
     f_best = max(f_best, f_r)
     df_para_r = df_para_r.assign(f = f_r, f_best = f_best)
