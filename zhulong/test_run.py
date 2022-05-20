@@ -9,14 +9,14 @@ from chemspeed_utils import plateau_function_1
 import pickle
 
 # define the starting material
-starting_material = Reagent(name="starting material", abbreviation="SM", min_volume=100, max_volume=100, concentration=0.630)
+starting_material = Reagent(name="starting material", abbreviation="SM", min_volume=80, max_volume=80, concentration=0.250)
 
 # define the reagents
 # assume we will pick one of these
 # reagents should have the same min/max volumes and stock solution concentrations
-min_volume = 73       # uL
-max_volume = 100      # uL
-concentration = 0.945 # M
+min_volume = 80       # uL
+max_volume = 120      # uL
+concentration = 0.250 # M
 NBS = Reagent(name="NBS", abbreviation="NBS", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
 DBDMH = Reagent(name="DBDMH", abbreviation="DBDMH", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
 reagents = [NBS, DBDMH]
@@ -26,7 +26,7 @@ reagents = [NBS, DBDMH]
 # additives should have the same min/max volumes and stock solution concentrations
 min_volume = 2        # uL
 max_volume = 50       # uL
-concentration = 0.315 # M
+concentration = 0.100 # M
 hydrochloric_acid = Reagent(name="hydrochloric acid", abbreviation="HCl", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
 sulfuric_acid = Reagent(name="sulfuric acid", abbreviation="H2SO4", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
 picolinic_acid = Reagent(name="picolinic acid", abbreviation="Picolinic", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
@@ -46,8 +46,8 @@ solvents = [ "MeCN", "DMC" ]
 parameter_space = ParameterSpace(starting_material, reagents, solvents,
                                  additives, light_stages=5,
                                  total_volume=250,          # add solvent to make the final volume in each experiment 250 uL
-                                 min_temperature=-30,         # in C
-                                 max_temperature=40,       # in C
+                                 min_temperature=5,         # in C
+                                 max_temperature=35,       # in C
                                  temperature_step_size=5   # in C
                                 )
 
@@ -96,7 +96,7 @@ for r in range(n_total):
                          parameter_space,
                          solvent=para_r['Solvent'],
                          temperature=int(para_r['Temperature']),
-                         starting_material_volume=100,
+                         starting_material_volume=80,
                          reagent=para_r['Reagent'],
                          reagent_equivalents=para_r['Reagent_equiv'],
                          additive=para_r['Additive'],
