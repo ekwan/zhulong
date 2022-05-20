@@ -80,7 +80,7 @@ chemspeed = ChemSpeed(chemspeed_csv_filename="Z:\\TEST\\Closed Loop APO.csv",
 # Modification of last section "run the experiments" in zhulong.py:
 
 parameter_bounds = parameter_space.get_bounds_dict()
-method = 'LM'# or'RS'
+method = 'BO'# or'RS'
 initMethod = 'batch8' # 'random' or 'batch8' for LM
 n_total = 48 # total iterations
 all_experiments = []
@@ -117,7 +117,6 @@ for r in range(n_total):
     df_para_r = df_para_r.assign(f = f_r, f_best = f_best)
     dat = pd.concat([dat,df_para_r],ignore_index = True)
     print("Round: ", r+1, "f: ", f_r,"f_best",f_best,"\n")
-
-dat = dat.assign(Round = range(1,n_total+1))
-dat = dat.assign(method = method)
-dat.to_csv("dat.csv")
+    dat = dat.assign(Round = (r+1))
+    dat = dat.assign(method = method)
+    dat.to_csv("dat.csv")
