@@ -1,8 +1,8 @@
 # Modification of last section "run the experiments" in zhulong.py:
 
 parameter_bounds = parameter_space.get_bounds_dict()
-method = 'LM'# or'RS'
-initMethod = 'batch8' # 'random' or 'batch8' for LM
+method = 'BO' # or 'RS' or 'LM'
+initMethod = 'batch8' # 'random' or 'batch8' for LM and BO
 n_total = 24 # total iterations
 
 dat = pd.DataFrame()

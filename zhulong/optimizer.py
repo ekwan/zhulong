@@ -20,6 +20,8 @@ import numpy as np
 from numpy.linalg import inv
 import math
 from sklearn.linear_model import LinearRegression
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, WhiteKernel                                                                                                                     
 from scipy.stats import norm, pearsonr
 from optimizer_utils import *
 import random
@@ -135,6 +137,48 @@ def optFun_LM(dat, parameter_bounds, seed, initMethod='random', n_start=8):
         print("Didn't find new candidate by LM method. Use RS instead.")
         return optFun_RS(dat, parameter_bounds, seed+3*dat.shape[0]+116)
 
+def optFun_BO(dat, parameter_bounds, seed, initMethod='random', n_start=8):
+    if (initMethod=='random') & (dat.shape[0] < n_start):
+        print("Random search for initial points.")
+        return optFun_RS(dat, parameter_bounds, seed)
+    if (initMethod=='batch8') & (dat.shape[0] < 8):
+        print("Batch of 8 diverse initial points with seed:", seed)
+        df_init = initial_batch_8(parameter_bounds, seed)
+        dict_select = df_init.iloc[dat.shape[0]].to_dict()
+        return dict_select 
+    random.seed(seed+6*dat.shape[0]+45)
+    X, cols_X, y = preprocessing_GP(dat,X_only = False)
+    z = transform_f2z(y)
+    kernel = 1.0 * RBF(length_scale=1e-1, length_scale_bounds=(1e-2, 1e3)) + WhiteKernel(noise_level=1e-2, noise_level_bounds=(1e-10, 1e1))
+    gpr = GaussianProcessRegressor(kernel=kernel, alpha=0.0, n_restarts_optimizer = 10, normalize_y = True, random_state = 123)
+    gpr.fit(X, z)
+    df_para = parameter_df(parameter_bounds)
+    X_all, cols_X_new = preprocessing_GP(df_para,X_only = True)
+    pred_z, pred_sd_z = gpr.predict(X_all, return_std=True)
+    pred_z = np.squeeze(pred_z)
+    # use Expected Improvement (EI) as Acquisition function
+    z_best = max(z)
+    gamma_z = (z_best - pred_z)/pred_sd_z
+    EI = pred_sd_z*(norm.pdf(gamma_z)-gamma_z*(1-norm.cdf(gamma_z)))
+    top_index = np.argwhere(EI == np.amax(EI)) #np.argmax(EI)
+    if top_index.shape[0] > 1:
+        np.random.shuffle(top_index)
+        dist2old = []
+        for i in range(top_index.shape[0]):
+            min_dist2old_i = np.min([np.linalg.norm(X_all[top_index[i],:]-X[j,:]) for j in range(X.shape[0])])
+            dist2old.append(min_dist2old_i) 
+        select_index = top_index[np.argmax(dist2old)]
+        dist2old_select = np.max(dist2old)
+    else:
+        select_index = top_index[0]
+        dist2old_select = np.min([np.linalg.norm(X_all[select_index,:]-X[j,:]) for j in range(X.shape[0])])
+    if dist2old_select>0:
+        df_select = df_para.iloc[select_index].assign(target=['EI'],target_value = EI[select_index], target_f = transform_z2f(z_best+EI[select_index])).reset_index(drop=True)
+        dict_select = df_select.iloc[0].to_dict()
+        return dict_select
+    else:
+        print("Didn't find new candidate by BO method. Use RS instead.")
+        return optFun_RS(dat, parameter_bounds, seed+2*dat.shape[0]+885)
 def optFun_RS(dat, parameter_bounds, seed, n_start = 1, n_candidates = 100):
     if dat.shape[0] < n_start:
         #df_init = initial_batch_LM(parameter_bounds)
@@ -157,19 +201,18 @@ def optFun_RS(dat, parameter_bounds, seed, n_start = 1, n_candidates = 100):
     dict_select = df_select.iloc[0].to_dict()
     return dict_select
 
-def optimization(dat, parameter_bounds, method = 'RS', seed = 0, initMethod = 'random'):
+def optimization(dat, parameter_bounds, method = 'RS', seed = 0, initMethod = 'random', n_start=8):
     assert(initMethod in ['random','batch8'])
-    if method in ['RS','LM']:
+    if method in ['RS','LM','BO']:
         print("Round: ", dat.shape[0]+1, "\t Optimization method:", method, "\n")
     else:
         print("Round: ", dat.shape[0]+1, "\t Warning: Optimization method", method, "is not available! \n Use Random Search instead. \n")
         method = 'RS'
     #
     if method == 'LM':
-        new_para = optFun_LM(dat, parameter_bounds, seed, initMethod)
+        new_para = optFun_LM(dat, parameter_bounds, seed, initMethod, n_start)
     elif method == 'BO':
-        # To-Do
-        return 0
+        new_para = optFun_BO(dat, parameter_bounds, seed, initMethod, n_start)
     else: 
         # RS
         new_para = optFun_RS(dat, parameter_bounds, seed)

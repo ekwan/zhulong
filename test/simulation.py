@@ -30,9 +30,9 @@ def simulation_fun(X_new, cols_X_new, cols_subset, reg, sigma = 0):
 with open('parameter_bounds.pkl', 'rb') as f:
     parameter_bounds = pickle.load(f)
 
-method = 'LM'# or'RS'
-initMethod = 'batch8' # 'random' or 'batch8' for LM
-n_total = 16
+method = 'BO' # or 'RS' or 'LM'
+initMethod = 'batch8' # 'random' or 'batch8' for LM and BO
+n_total = 24
 
 dat = pd.DataFrame()
 f_best = 0

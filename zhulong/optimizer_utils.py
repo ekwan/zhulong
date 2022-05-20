@@ -139,3 +139,45 @@ def preprocessing_lm(dat, X_only = True):
         y = dat[["f"]].to_numpy()
         return X, cols_X, y
  
+def preprocessing_GP(dat, X_only = True):
+    # Prepare data for Gaussian Process regression
+    # Output X has 7 columns:
+    #   2 factors: Reagent, Solvent (each with two levels)
+    #   5 numeric: AdditiveLoading, Additive_pKa, Temperature, Stage, Reagent_equiv
+    # add numerical descriptor for Additive if missing
+    if not 'Additive_pKa' in dat:
+        # Load numerical descriptor for the Additive factor
+        df_Additive_desc = pd.read_csv("../data/df_Additive_desc.csv")
+        # To match the hard-coded names in zhulong:
+        df_Additive_desc.rename(columns = {'Additive':'Additive_oldName'}, inplace = True)
+        df_Additive_desc = pd.concat([pd.DataFrame({'Additive':['hydrochloric acid', 'sulfuric acid', 'picolinic acid', 'phenylphosphonic acid', 
+                                            'phosphoric acid', 'lactic acid', 'acetic acid', 'water']}), 
+                                df_Additive_desc], axis = 1, ignore_index=False)
+        dat = pd.merge(dat, df_Additive_desc, how='left',on = 'Additive')
+    # only keep Additive with Additive_pKa descriptor
+    dat = dat[~dat['Additive_pKa'].isnull()]
+    # scale some numerical variables to avoid large numbers
+    #   Temperature
+    Temperature_scaled = dat.loc[:,"Temperature"]/40.0
+    dat.loc[:,"Temperature"] = Temperature_scaled
+    #   AdditiveLoading
+    AdditiveLoading_scaled = dat.loc[:,"AdditiveLoading"]/25.0
+    dat.loc[:,"AdditiveLoading"] = AdditiveLoading_scaled
+    #   Additive_pKa
+    Additive_pKa_scaled = dat.loc[:,"Additive_pKa"]/10.0
+    dat.loc[:,"Additive_pKa"] = Additive_pKa_scaled
+    #   Stage
+    Stage_scaled = dat.loc[:,"Stage"]/5.0
+    dat.loc[:,"Stage"] = Stage_scaled
+    # create one-hot encoding to replace factors
+    dat = dat.assign(Reagent_DBDMH = np.array(dat['Reagent'] == 'DBDMH', dtype = 'int8'))
+    dat = dat.assign(Solvent_DMC = np.array(dat['Solvent'] == 'DMC', dtype = 'int8'))
+    colnames_Reagent = ['Reagent_DBDMH']
+    colnames_Solvent = ['Solvent_DMC']
+    X = dat[colnames_Reagent+colnames_Solvent+["AdditiveLoading","Additive_pKa","Temperature","Reagent_equiv","Stage"]].to_numpy()
+    cols_X = colnames_Reagent+colnames_Solvent+["AdditiveLoading","Additive_pKa","Temperature","Reagent_equiv","Stage"]
+    if X_only:
+        return X, cols_X
+    else:
+        y = dat[["f"]].to_numpy()
+        return X, cols_X, y
