@@ -3,13 +3,14 @@
 parameter_bounds = parameter_space.get_bounds_dict()
 method = 'BO' # or 'RS' or 'LM'
 initMethod = 'batch8' # 'random' or 'batch8' for LM and BO
+acquisition = 'PI' # 'EI', 'PI' or 'UCB' for BO, and 'Pred' for LM
 n_total = 24 # total iterations
 
 dat = pd.DataFrame()
 f_best = 0
 for r in range(n_total):
     # get a set of new parameters for round r
-    para_r = optimization(dat, parameter_bounds,method, seed = 1234, initMethod = initMethod) 
+    para_r = optimization(dat, parameter_bounds,method=method, seed = 1234, initMethod = initMethod, acquisition = acquisition) 
     df_para_r = pd.DataFrame({k: [v] for k, v in para_r.items()})
     # define an experiment object for this round
     experiment_r = Experiment.create(
@@ -37,4 +38,6 @@ for r in range(n_total):
 
 dat = dat.assign(Round = range(1,n_total+1))
 dat = dat.assign(method = method)
+dat = dat.assign(initMethod = initMethod)
+dat = dat.assign(acquisition = acquisition)
 dat.to_csv("dat.csv")

@@ -7,6 +7,12 @@ Inputs:
         'RS' = Random Search
         'LM' = Polynomial regression modeling
         'BO' = Bayesian optimization
+    aquisition: 
+        For BO: Choose an aquisition function from the list ['EI','PI','UCB']
+            'EI' = Expected Improvement
+            'PI' = Probability of Improvement
+            'UCB' = GP Upper Confidence Bound 
+        For LM: Only one option 'Pred'
 Outputs:
     newPara: A dictionary contains the candidate experimental condition for next round
 
@@ -21,11 +27,12 @@ from numpy.linalg import inv
 import math
 from sklearn.linear_model import LinearRegression
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, WhiteKernel                                                                                                                     
+from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 from scipy.stats import norm, pearsonr
 from optimizer_utils import *
 import random
 import os
+import pickle
 
 def initial_oneSample(parameter_bounds, seed):
     dict_listAll = {
@@ -92,7 +99,7 @@ def initial_batch_8(parameter_bounds, seed):
         df_init.to_csv(saveCSVFileName, index = False)
     return df_init
     
-def optFun_LM(dat, parameter_bounds, seed, initMethod='random', n_start=8):
+def optFun_LM(dat, parameter_bounds, seed, initMethod='random', n_start=8, model_dir='models', acquisition='Pred'):
     if (initMethod=='random') & (dat.shape[0] < n_start):
         print("Random search for initial points.")
         return optFun_RS(dat, parameter_bounds, seed)
@@ -112,6 +119,11 @@ def optFun_LM(dat, parameter_bounds, seed, initMethod='random', n_start=8):
     X = X[:,cols_subset]
     z = transform_f2z(y)
     reg = LinearRegression().fit(X[:,1:], z)
+    saveModelPath = os.path.join(model_dir, 'LM_'+initMethod+'_'+acquisition+'_'+str(seed)+'_Rd_'+str(dat.shape[0]+1)+'.pkl')
+    with open(saveModelPath,'wb') as f:
+        pickle.dump(reg,f)
+        pickle.dump(X,f)
+        pickle.dump(z,f)
     df_para = parameter_df(parameter_bounds)
     X_all, cols_X_new = preprocessing_lm(df_para,X_only = True)
     X_all = X_all[:,cols_subset]
@@ -130,14 +142,16 @@ def optFun_LM(dat, parameter_bounds, seed, initMethod='random', n_start=8):
         select_index = top_index[0]
         dist2old_select = np.min([np.linalg.norm(X_all[select_index,:]-X[j,:]) for j in range(X.shape[0])])
     if dist2old_select>0:
-        df_select = df_para.iloc[select_index].assign(target=['pred_f'],target_value = transform_z2f(pred_z[select_index])).reset_index(drop=True)
+        df_select = df_para.iloc[select_index].assign(target=[acquisition],
+                                                      target_value = pred_z[select_index], 
+                                                      target_f=transform_z2f(pred_z[select_index])).reset_index(drop=True)
         dict_select = df_select.iloc[0].to_dict()
         return dict_select
     else:
         print("Didn't find new candidate by LM method. Use RS instead.")
         return optFun_RS(dat, parameter_bounds, seed+3*dat.shape[0]+116)
 
-def optFun_BO(dat, parameter_bounds, seed, initMethod='random', n_start=8):
+def optFun_BO(dat, parameter_bounds, seed, initMethod='random', n_start=8, model_dir='models', acquisition='EI'):
     if (initMethod=='random') & (dat.shape[0] < n_start):
         print("Random search for initial points.")
         return optFun_RS(dat, parameter_bounds, seed)
@@ -152,15 +166,29 @@ def optFun_BO(dat, parameter_bounds, seed, initMethod='random', n_start=8):
     kernel = 1.0 * RBF(length_scale=1e-1, length_scale_bounds=(1e-2, 1e3)) + WhiteKernel(noise_level=1e-2, noise_level_bounds=(1e-10, 1e1))
     gpr = GaussianProcessRegressor(kernel=kernel, alpha=0.0, n_restarts_optimizer = 10, normalize_y = True, random_state = 123)
     gpr.fit(X, z)
+    saveModelPath = os.path.join(model_dir, 'BO_'+initMethod+'_'+acquisition+'_'+str(seed)+'_Rd_'+str(dat.shape[0]+1)+'.pkl')
+    with open(saveModelPath,'wb') as f:
+        pickle.dump(gpr,f)
+        pickle.dump(X,f)
+        pickle.dump(z,f)
     df_para = parameter_df(parameter_bounds)
     X_all, cols_X_new = preprocessing_GP(df_para,X_only = True)
     pred_z, pred_sd_z = gpr.predict(X_all, return_std=True)
     pred_z = np.squeeze(pred_z)
-    # use Expected Improvement (EI) as Acquisition function
     z_best = max(z)
     gamma_z = (z_best - pred_z)/pred_sd_z
-    EI = pred_sd_z*(norm.pdf(gamma_z)-gamma_z*(1-norm.cdf(gamma_z)))
-    top_index = np.argwhere(EI == np.amax(EI)) #np.argmax(EI)
+    # Acquisition function
+    if acquisition=='EI':
+        # Expected Improvement (EI) 
+        acq_values = pred_sd_z*(norm.pdf(gamma_z)-gamma_z*(1-norm.cdf(gamma_z))) # EI
+    elif acquisition=='PI':
+        # Probability of Improvement (PI)
+        acq_values = 1-norm.cdf(gamma_z) # PI
+    else:
+        # GP Upper Confidence Bound (UCB)
+        alpha = 0.95 # use 95% prediction interval
+        acq_values = pred_z+norm.ppf(1-(1-alpha)/2.0)*pred_sd_z # upr_z
+    top_index = np.argwhere(acq_values == np.amax(acq_values)) #np.argmax(acq_values)
     if top_index.shape[0] > 1:
         np.random.shuffle(top_index)
         dist2old = []
@@ -173,7 +201,13 @@ def optFun_BO(dat, parameter_bounds, seed, initMethod='random', n_start=8):
         select_index = top_index[0]
         dist2old_select = np.min([np.linalg.norm(X_all[select_index,:]-X[j,:]) for j in range(X.shape[0])])
     if dist2old_select>0:
-        df_select = df_para.iloc[select_index].assign(target=['EI'],target_value = EI[select_index], target_f = transform_z2f(z_best+EI[select_index])).reset_index(drop=True)
+        df_select = df_para.iloc[select_index].assign(target=[acquisition],target_value = acq_values[select_index]).reset_index(drop=True)
+        if acquisition=='EI':
+            df_select=df_select.assign(target_f = transform_z2f(z_best+acq_values[select_index]))
+        elif acquisition=='PI':
+            df_select=df_select.assign(target_f = 100*acq_values[select_index])
+        else:
+            df_select=df_select.assign(target_f = transform_z2f(acq_values[select_index]))
         dict_select = df_select.iloc[0].to_dict()
         return dict_select
     else:
@@ -201,18 +235,23 @@ def optFun_RS(dat, parameter_bounds, seed, n_start = 1, n_candidates = 100):
     dict_select = df_select.iloc[0].to_dict()
     return dict_select
 
-def optimization(dat, parameter_bounds, method = 'RS', seed = 0, initMethod = 'random', n_start=8):
+def optimization(dat, parameter_bounds, method = 'BO', seed = 0, initMethod = 'random', n_start=8, acquisition='EI'):
     assert(initMethod in ['random','batch8'])
     if method in ['RS','LM','BO']:
-        print("Round: ", dat.shape[0]+1, "\t Optimization method:", method, "\n")
+        print("Round: ", dat.shape[0]+1, "\t Optimization method:", method, "\t Aquisition function: ", acquisition)
     else:
-        print("Round: ", dat.shape[0]+1, "\t Warning: Optimization method", method, "is not available! \n Use Random Search instead. \n")
+        print("Round: ", dat.shape[0]+1, "\t Warning: Optimization method", method, "is not available! \n Use Random Search instead. ")
         method = 'RS'
-    #
+    # create folder to save trained models at each iteration
+    saveModelFolder='models'
+    if not os.path.exists(saveModelFolder):
+        os.makedirs(saveModelFolder)
     if method == 'LM':
-        new_para = optFun_LM(dat, parameter_bounds, seed, initMethod, n_start)
+        assert(acquisition in ['Pred'])
+        new_para = optFun_LM(dat, parameter_bounds, seed, initMethod, n_start, saveModelFolder, acquisition)
     elif method == 'BO':
-        new_para = optFun_BO(dat, parameter_bounds, seed, initMethod, n_start)
+        assert(acquisition in ['EI','PI','UCB'])
+        new_para = optFun_BO(dat, parameter_bounds, seed, initMethod, n_start, saveModelFolder, acquisition)
     else: 
         # RS
         new_para = optFun_RS(dat, parameter_bounds, seed)

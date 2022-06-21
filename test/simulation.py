@@ -33,11 +33,12 @@ with open('parameter_bounds.pkl', 'rb') as f:
 method = 'BO' # or 'RS' or 'LM'
 initMethod = 'batch8' # 'random' or 'batch8' for LM and BO
 n_total = 24
+acquisition = 'UCB' # 'EI', 'PI' or 'UCB' for BO, and 'Pred' for LM
 
 dat = pd.DataFrame()
 f_best = 0
 for r in range(n_total):
-    new_para = optimization(dat, parameter_bounds,method, seed = 999, initMethod = initMethod)
+    new_para = optimization(dat, parameter_bounds,method=method, seed = 999, initMethod = initMethod, acquisition = acquisition)
     df_new_para = pd.DataFrame({k: [v] for k, v in new_para.items()})
     X_new, cols_X_new = preprocessing_lm(df_new_para,X_only = True)
     f_sim = simulation_fun(X_new, cols_X_new, cols_subset, reg)
@@ -48,4 +49,6 @@ for r in range(n_total):
 
 dat = dat.assign(Round = range(1,n_total+1))
 dat = dat.assign(method = method)
-dat.to_csv("sim_"+method+".csv")
+dat = dat.assign(initMethod = initMethod)
+dat = dat.assign(acquisition = acquisition)
+dat.to_csv("sim_"+method+"_"+initMethod+"_"+acquisition+".csv")
