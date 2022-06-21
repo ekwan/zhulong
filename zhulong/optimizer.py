@@ -186,7 +186,7 @@ def optFun_BO(dat, parameter_bounds, seed, initMethod='random', n_start=8, model
         acq_values = 1-norm.cdf(gamma_z) # PI
     else:
         # GP Upper Confidence Bound (UCB)
-        alpha = 0.8 # use 80% prediction interval
+        alpha = 0.95 # use 95% prediction interval
         acq_values = pred_z+norm.ppf(1-(1-alpha)/2.0)*pred_sd_z # upr_z
     top_index = np.argwhere(acq_values == np.amax(acq_values)) #np.argmax(acq_values)
     if top_index.shape[0] > 1:
