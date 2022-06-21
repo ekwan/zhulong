@@ -57,7 +57,7 @@ parameter_space = ParameterSpace(starting_material, reagents, solvents,
 # print(bounds_dict_string)
 
 # define HPLC peaks
-starting_material_peak = Peak(name="starting material", min_retention_time=0.92, max_retention_time=1.05)
+starting_material_peak = Peak(name="starting material", min_retention_time=0.92, max_retention_time=1.07)
 product_peak = Peak(name="bromo product", min_retention_time=1.20, max_retention_time=1.35)
 dibromo_peak = Peak(name="dibromo product", min_retention_time=1.42, max_retention_time=1.52)
 #internal_standard_peak = Peak(name="internal standard", min_retention_time=1.40, max_retention_time=1.50)
@@ -114,9 +114,7 @@ for r in range(n_total):
         pickle.dump(all_experiments, file)
     f_r = history['values'][-1]
     f_best = max(f_best, f_r)
-    df_para_r = df_para_r.assign(f = f_r, f_best = f_best)
-    dat = pd.concat([dat,df_para_r],ignore_index = True)
-    print("Round: ", r+1, "f: ", f_r,"f_best",f_best,"\n")
-    dat = dat.assign(Round = (r+1))
-    dat = dat.assign(method = method)
+    df_para_r = df_para_r.assign(f=f_r, f_best=f_best, Round=(r + 1), method=method)
+    dat = pd.concat([dat, df_para_r], ignore_index=True)
+    print("Round: ", r + 1, "f: ", f_r, "f_best", f_best, "\n")
     dat.to_csv("dat.csv")
