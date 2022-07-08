@@ -300,6 +300,10 @@ class Experiment():
         experiment.additive_volume = additive_volume_uL
         experiment.additive_mole_percent = additive_mole_percent
 
+        total_volume = starting_material_volume + experiment.reagent_volume + experiment.additive_volume
+        experiment.solvent_volume = parameter_space.total_volume - total_volume
+        assert experiment.solvent_volume >= 0, f"total volume for this experiment is {total_volume}, which exceeds the max of {parameter_space.total_volume}"
+
         # return result
         return experiment
 
