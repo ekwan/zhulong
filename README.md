@@ -113,10 +113,10 @@ product_peak = Peak(name="bromo product", min_retention_time=1.53, max_retention
 internal_standard_peak = Peak(name="internal standard", min_retention_time=2.05, max_retention_time=2.25)
 ```
 
-Then, we need to define a function that converts a ChemStation report into a yield.  In this test, we'll just take the "yield" as the raw product integral and multiply by the response factor (1.0) here.  In production, we should measure the response factor and calculate the yield as response_factor * product/IS:
+Then, we need to define a function that converts the ChemStation report into the yield.  In this project, the yield is represented by product_peak area %.  It is also possible to determine a response factor and calculate the yield via the following equation: response_factor * product_peak area / internal_standard_peak area.
 
 ```
-# for testing, just report the raw integral of the product peak
+# for testing, just report the area % of the product peak
 # but could also convert to chemical yield via response factor
 yield_function = get_yield_function(product_peak, internal_standard_peak=None, response_factor=1.0)
 #yield_function = get_yield_function(product_peak, internal_standard_peak, response_factor=10.0)
