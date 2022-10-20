@@ -14,25 +14,30 @@ from experiment import Experiment
 #                                              chemstation .D folders and only parse new ones
 # yield_function (function) : parses the specified .D folder and returns a yield
 # plateau_function (function) : receives a list of yields and returns True if we are plateaued and should stop sampling
-#                               (if None, only one sample will be drawn) 
+#                               (if None, only one sample will be drawn)
 # polling_interval (int) : how often in seconds to check the chemstation folder for .D files
 #
 # additional fields:
-# chemstation_parsed_folders (list): names of .D directories that have already been parsed
+# chemstation_parsed_folders (list): names of .D directories that have
+# already been parsed
+
+
 class ChemSpeed():
     def __init__(self, chemspeed_csv_filename,
-                       chemstation_folder,
-                       yield_function,
-                       plateau_function=None,
-                       overwrite_existing_chemspeed_csv=True,
-                       ignore_existing_chemstation_folders=True,
-                       polling_interval=1):
+                 chemstation_folder,
+                 yield_function,
+                 plateau_function=None,
+                 overwrite_existing_chemspeed_csv=True,
+                 ignore_existing_chemstation_folders=True,
+                 polling_interval=1):
         assert isinstance(chemspeed_csv_filename, str)
         assert len(chemspeed_csv_filename) > 0
         assert isinstance(overwrite_existing_chemspeed_csv, bool)
         assert isinstance(ignore_existing_chemstation_folders, bool)
-        if not overwrite_existing_chemspeed_csv and os.path.exists(chemspeed_csv_filename):
-            raise ValueError("chemspeed csv already exists (set overwrite_existing_chemspeed_csv=True to overwrite)")
+        if not overwrite_existing_chemspeed_csv and os.path.exists(
+                chemspeed_csv_filename):
+            raise ValueError(
+                "chemspeed csv already exists (set overwrite_existing_chemspeed_csv=True to overwrite)")
         if os.path.exists(chemspeed_csv_filename):
             os.remove(chemspeed_csv_filename)
         self.chemspeed_csv_filename = chemspeed_csv_filename
@@ -64,9 +69,9 @@ class ChemSpeed():
         assert polling_interval > 0
         self.polling_interval = polling_interval
 
-
     # runs one experiment and blocks until it is finished
     # experiment (Experiment) : the experiment to run
+
     def run_experiment(self, experiment):
         assert isinstance(experiment, Experiment)
 
@@ -76,9 +81,9 @@ class ChemSpeed():
 
         # loop until plateau_function reports that we should stop
         experiment.history = {
-                "times" : [],   # in epoch seconds
-                "values" : [],  # objective function values (yields)
-            }
+            "times": [],   # in epoch seconds
+            "values": [],  # objective function values (yields)
+        }
         times = experiment.history["times"]
         values = experiment.history["values"]
         while True:
@@ -94,10 +99,12 @@ class ChemSpeed():
             directories = glob(f"{self.chemstation_folder}/*.D")
             new_directory_found = False
             for directory in sorted(directories, key=os.path.getmtime):
-                if directory in self.chemstation_parsed_folders or not os.path.isdir(directory):
+                if directory in self.chemstation_parsed_folders or not os.path.isdir(
+                        directory):
                     continue
 
-                # found an unparsed directory, so parse it and mark it as parsed
+                # found an unparsed directory, so parse it and mark it as
+                # parsed
                 self.chemstation_parsed_folders.append(directory)
                 new_directory_found = True
                 print(f"\nfound folder {directory}")
@@ -112,7 +119,8 @@ class ChemSpeed():
             chemical_yield = self.yield_function(directory)
             times.append(folder_time)
             values.append(chemical_yield)
-            print(f"yield is {chemical_yield} (recorded at {folder_time} s since the epoch)")
+            print(
+                f"yield is {chemical_yield} (recorded at {folder_time} s since the epoch)")
 
             # see if the experiment has plateaued
             plateaued = self.plateau_function(experiment.history)
@@ -123,8 +131,8 @@ class ChemSpeed():
                 self.append_to_chemspeed_csv(headings, values)
                 return
 
-
     # appends to csv file, creating the csv file if it does not already exist
+
     def append_to_chemspeed_csv(self, headings, values):
         if not hasattr(self, "_chemspeed_df"):
             # create new DataFrame and store it for future experiments
@@ -134,15 +142,15 @@ class ChemSpeed():
             # note: not checking for duplicate experiment IDs
             df = self._chemspeed_df
             this_id = int(values[0])
-            last_id = int(df.iloc[-1,0])
+            last_id = int(df.iloc[-1, 0])
             #print(this_id, type(this_id), last_id, type(last_id), this_id==last_id)
             if this_id == last_id:
                 # replace last row
-                df.loc[len(df)-1] = values
+                df.loc[len(df) - 1] = values
             else:
                 # append new row
                 df.loc[len(df)] = values
-            #print(df)
+            # print(df)
 
             assert list(df.columns) == headings
         df.to_csv(self.chemspeed_csv_filename, index=False)

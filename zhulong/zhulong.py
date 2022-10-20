@@ -4,47 +4,113 @@ from chemstation import Peak, get_yield_function
 from chemspeed import ChemSpeed
 
 # define the starting material
-starting_material = Reagent(name="starting material", abbreviation="SM", min_volume=100, max_volume=100, concentration=0.630)
+starting_material = Reagent(
+    name="starting material",
+    abbreviation="SM",
+    min_volume=100,
+    max_volume=100,
+    concentration=0.630)
 
 # define the reagents
 # assume we will pick one of these
-# reagents should have the same min/max volumes and stock solution concentrations
+# reagents should have the same min/max volumes and stock solution
+# concentrations
 min_volume = 73       # uL
 max_volume = 100      # uL
-concentration = 0.945 # M
-NBS = Reagent(name="NBS", abbreviation="NBS", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
-DBDMH = Reagent(name="DBDMH", abbreviation="DBDMH", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
+concentration = 0.945  # M
+NBS = Reagent(
+    name="NBS",
+    abbreviation="NBS",
+    min_volume=min_volume,
+    max_volume=max_volume,
+    concentration=concentration)
+DBDMH = Reagent(
+    name="DBDMH",
+    abbreviation="DBDMH",
+    min_volume=min_volume,
+    max_volume=max_volume,
+    concentration=concentration)
 reagents = [NBS, DBDMH]
 
 # define the additives
 # assume we will pick one of these
-# additives should have the same min/max volumes and stock solution concentrations
+# additives should have the same min/max volumes and stock solution
+# concentrations
 min_volume = 2        # uL
 max_volume = 50       # uL
-concentration = 0.315 # M
-hydrochloric_acid = Reagent(name="hydrochloric acid", abbreviation="HCl", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
-sulfuric_acid = Reagent(name="sulfuric acid", abbreviation="H2SO4", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
-picolinic_acid = Reagent(name="picolinic acid", abbreviation="Picolinic", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
-phenylphosphonic_acid = Reagent(name="phenylphosphonic acid", abbreviation="Phenylphosphonic", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
-phosphoric_acid = Reagent(name="phosphoric acid", abbreviation="Phosphoric", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
-lactic_acid = Reagent(name="lactic acid", abbreviation="Lactic", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
-acetic_acid = Reagent(name="acetic acid", abbreviation="Acetic", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
-water = Reagent(name="water", abbreviation="Water", min_volume=min_volume, max_volume=max_volume, concentration=concentration)
-additives = [ hydrochloric_acid, sulfuric_acid, picolinic_acid, phenylphosphonic_acid,
-              phosphoric_acid, lactic_acid, acetic_acid, water ]
+concentration = 0.315  # M
+hydrochloric_acid = Reagent(
+    name="hydrochloric acid",
+    abbreviation="HCl",
+    min_volume=min_volume,
+    max_volume=max_volume,
+    concentration=concentration)
+sulfuric_acid = Reagent(
+    name="sulfuric acid",
+    abbreviation="H2SO4",
+    min_volume=min_volume,
+    max_volume=max_volume,
+    concentration=concentration)
+picolinic_acid = Reagent(
+    name="picolinic acid",
+    abbreviation="Picolinic",
+    min_volume=min_volume,
+    max_volume=max_volume,
+    concentration=concentration)
+phenylphosphonic_acid = Reagent(
+    name="phenylphosphonic acid",
+    abbreviation="Phenylphosphonic",
+    min_volume=min_volume,
+    max_volume=max_volume,
+    concentration=concentration)
+phosphoric_acid = Reagent(
+    name="phosphoric acid",
+    abbreviation="Phosphoric",
+    min_volume=min_volume,
+    max_volume=max_volume,
+    concentration=concentration)
+lactic_acid = Reagent(
+    name="lactic acid",
+    abbreviation="Lactic",
+    min_volume=min_volume,
+    max_volume=max_volume,
+    concentration=concentration)
+acetic_acid = Reagent(
+    name="acetic acid",
+    abbreviation="Acetic",
+    min_volume=min_volume,
+    max_volume=max_volume,
+    concentration=concentration)
+water = Reagent(
+    name="water",
+    abbreviation="Water",
+    min_volume=min_volume,
+    max_volume=max_volume,
+    concentration=concentration)
+additives = [
+    hydrochloric_acid,
+    sulfuric_acid,
+    picolinic_acid,
+    phenylphosphonic_acid,
+    phosphoric_acid,
+    lactic_acid,
+    acetic_acid,
+    water]
 
 # define the solvents
 # assume we will pick one of these
-solvents = [ "MeCN", "DMC" ]
+solvents = ["MeCN", "DMC"]
 
 # define the parameter space to optimize over
 parameter_space = ParameterSpace(starting_material, reagents, solvents,
                                  additives, light_stages=5,
-                                 total_volume=250,          # add solvent to make the final volume in each experiment 250 uL
+                                 total_volume=250,
+                                 # add solvent to make the final volume in each
+                                 # experiment 250 uL
                                  min_temperature=-30,         # in C
                                  max_temperature=40,       # in C
                                  temperature_step_size=5   # in C
-                                )
+                                 )
 
 # for convenience, here is a dictionary containing the bounds
 bounds_dict = parameter_space.get_bounds_dict()
@@ -53,11 +119,18 @@ print(bounds_dict_string)
 
 # define an experiment using volumes
 experiment1 = Experiment(parameter_space,                   # defines the parameter space this experiment is helping to explore
-                         solvent="DMC",                     # stocks will automatically be added in the correct solvent
+                         # stocks will automatically be added in the correct
+                         # solvent
+                         solvent="DMC",
                          temperature=25,                    # in Celsius
                          starting_material_volume=100,      # in uL
-                         reagent="NBS",                     # one of the reagents in the ParameterSpace (also accepted:
-                                                            # list index as zero-indexed integer or Reagent object)
+                         # one of the reagents in the ParameterSpace (also
+                         # accepted:
+                         reagent="NBS",
+                                                            # list index as
+                                                            # zero-indexed
+                                                            # integer or
+                                                            # Reagent object)
                          reagent_volume=75,                 # in uL
                                                             # (also accepted: zero-indexed list index)
                          additive="lactic acid",            # one of the additives in the ParameterSpace
@@ -67,34 +140,50 @@ experiment1 = Experiment(parameter_space,                   # defines the parame
 
 # print out what would go into the chemspeed csv file
 #headings, values = experiment.get_row(sampling=1)
-#for h,v in zip(headings,values):
+# for h,v in zip(headings,values):
 #    print(f"{h} : {v}")
-#print()
+# print()
 
 # define an experiment using equivalents and mol%
 experiment2 = Experiment.create(
-                         parameter_space,                   # defines the parameter space this experiment is helping to explore
-                         solvent="MeCN",                    # stocks will automatically be added in the correct solvent
-                         temperature=25,                    # in Celsius
-                         starting_material_volume=100,      # in uL
-                         reagent="DBDMH",                   # one of the reagents in the ParameterSpace (also accepted:
-                                                            # list index as zero-indexed integer or Reagent object)
-                         reagent_equivalents=1.40,          # in equivalents
-                                                            # (also accepted: zero-indexed list index)
-                         additive="lactic acid",            # one of the additives in the ParameterSpace
-                                                            # (also accepted: zero-indexed list index or Reagent object)
-                         additive_mole_percent=5,           # in mol%
-                         light_stage=2)                     # int: 1-5
+    # defines the parameter space this experiment is helping to explore
+    parameter_space,
+    # stocks will automatically be added in the correct solvent
+    solvent="MeCN",
+    temperature=25,                    # in Celsius
+    starting_material_volume=100,      # in uL
+    # one of the reagents in the ParameterSpace (also accepted:
+    reagent="DBDMH",
+    # list index as zero-indexed integer or Reagent object)
+    reagent_equivalents=1.40,          # in equivalents
+    # (also accepted: zero-indexed list index)
+    additive="lactic acid",            # one of the additives in the ParameterSpace
+    # (also accepted: zero-indexed list index or Reagent object)
+    additive_mole_percent=5,           # in mol%
+    light_stage=2)                     # int: 1-5
 
 # define HPLC peaks
-starting_material_peak = Peak(name="starting material", min_retention_time=1.28, max_retention_time=1.48)
-product_peak = Peak(name="bromo product", min_retention_time=1.53, max_retention_time=1.73)
-dibromo_peak = Peak(name="dibromo impurity", min_retention_time=2.05, max_retention_time=2.25)
+starting_material_peak = Peak(
+    name="starting material",
+    min_retention_time=1.28,
+    max_retention_time=1.48)
+product_peak = Peak(
+    name="bromo product",
+    min_retention_time=1.53,
+    max_retention_time=1.73)
+dibromo_peak = Peak(
+    name="dibromo impurity",
+    min_retention_time=2.05,
+    max_retention_time=2.25)
 # internal_standard_peak = Peak(name="internal standard", min_retention_time=2.05, max_retention_time=2.25)
 
 # for testing, just report the area % of the product peak
-# but could also report the raw area count and convert to chemical yield via response factor
-yield_function = get_yield_function(product_peak, internal_standard_peak=None, response_factor=1.0)
+# but could also report the raw area count and convert to chemical yield
+# via response factor
+yield_function = get_yield_function(
+    product_peak,
+    internal_standard_peak=None,
+    response_factor=1.0)
 # yield_function = get_yield_function(product_peak, internal_standard_peak, response_factor=10.0)
 
 # represents the ChemSpeed robot

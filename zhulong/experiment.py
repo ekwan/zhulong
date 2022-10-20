@@ -2,13 +2,21 @@ import json
 from chemstation import Peak, AgilentReport
 
 # represents a reagent, either neat or in solution
+
+
 class Reagent():
     # name (str) : name of reagent
     # abbreviation (str) : abbreviation for reagent
     # min_volume (int) : minimum volume in uL
     # max_volume (int) : maximum volume in uL
     # concentration (float) : in mol/L (optional)
-    def __init__(self, name, abbreviation, min_volume=None, max_volume=None, concentration=None):
+    def __init__(
+            self,
+            name,
+            abbreviation,
+            min_volume=None,
+            max_volume=None,
+            concentration=None):
         assert isinstance(name, str)
         assert len(name) > 0
         self.name = name
@@ -27,16 +35,18 @@ class Reagent():
         self.concentration = concentration
 
 # represents the space of parameters to explore in an optimization
+
+
 class ParameterSpace():
     def __init__(self, starting_material,
-                       reagents,
-                       solvents,
-                       additives,
-                       light_stages,
-                       total_volume,
-                       min_temperature,
-                       max_temperature,
-                       temperature_step_size):
+                 reagents,
+                 solvents,
+                 additives,
+                 light_stages,
+                 total_volume,
+                 min_temperature,
+                 max_temperature,
+                 temperature_step_size):
         assert isinstance(starting_material, Reagent)
         assert starting_material.min_volume == starting_material.max_volume
         self.starting_material = starting_material
@@ -71,9 +81,9 @@ class ParameterSpace():
         assert total_volume > 0
         self.total_volume = total_volume
 
-        assert isinstance(min_temperature, (int,float))
-        assert isinstance(max_temperature, (int,float))
-        assert isinstance(temperature_step_size, (int,float))
+        assert isinstance(min_temperature, (int, float))
+        assert isinstance(max_temperature, (int, float))
+        assert isinstance(temperature_step_size, (int, float))
         assert temperature_step_size > 0
         assert max_temperature >= min_temperature
         self.min_temperature = int(min_temperature)
@@ -86,42 +96,47 @@ class ParameterSpace():
         bounds_dict = {}
 
         reagent = self.reagents[0]
-        min_equivalents, max_equivalents, step_size = get_bounds(self.starting_material, reagent)
+        min_equivalents, max_equivalents, step_size = get_bounds(
+            self.starting_material, reagent)
         bounds_dict["reagents"] = {
-            #"name" : reagent.name,
-            "names" : [ reagent.name for reagent in self.reagents ],# YX: make parameter_space more complete???
-            "min_equivalents" : min_equivalents,
-            "max_equivalents" : max_equivalents,
-            "step_size" : step_size,
+            # "name" : reagent.name,
+            # YX: make parameter_space more complete???
+            "names": [reagent.name for reagent in self.reagents],
+            "min_equivalents": min_equivalents,
+            "max_equivalents": max_equivalents,
+            "step_size": step_size,
         }
 
         # assumes all additives have the same volume limits
         additive = self.additives[0]
-        min_equivalents, max_equivalents, step_size = get_bounds(self.starting_material, additive)
+        min_equivalents, max_equivalents, step_size = get_bounds(
+            self.starting_material, additive)
         bounds_dict["additives"] = {
-            "names" : [ additive.name for additive in self.additives ],
-            "min_mole_percent" : min_equivalents*100,
-            "max_mole_percent" : max_equivalents*100,
-            "step_size" : step_size*100,
+            "names": [additive.name for additive in self.additives],
+            "min_mole_percent": min_equivalents * 100,
+            "max_mole_percent": max_equivalents * 100,
+            "step_size": step_size * 100,
         }
 
         bounds_dict["temperature"] = {
-            "min" : self.min_temperature,
-            "max" : self.max_temperature,
-            "step_size" : self.temperature_step_size,
+            "min": self.min_temperature,
+            "max": self.max_temperature,
+            "step_size": self.temperature_step_size,
         }
 
         bounds_dict["solvents"] = {
-            "names" : self.solvents,
+            "names": self.solvents,
         }
 
         bounds_dict["light stages"] = {
-            "names" : list(range(1,self.light_stages+1)),
+            "names": list(range(1, self.light_stages + 1)),
         }
 
         return bounds_dict
 
 # represents a single experiment inside a ParameterSpace
+
+
 class Experiment():
     # parameter_space : the parameter space this experiment should correspond to
     # solvent (str) : as a string or list index for parameter_space.solvents
@@ -137,13 +152,14 @@ class Experiment():
     # additional fields that will be generated:
     # identifier : int, unique number for this experiment
     # starting_material (Reagent) : points to parameter_space
-    # solvent_volume : int, in uL, makeup solvent will be added to satisfy parameter_space.total_volume
+    # solvent_volume : int, in uL, makeup solvent will be added to satisfy
+    # parameter_space.total_volume
     def __init__(self, parameter_space,
-                       solvent, temperature,
-                       starting_material_volume,
-                       reagent, reagent_volume,
-                       additive, additive_volume,
-                       light_stage, factory=False):
+                 solvent, temperature,
+                 starting_material_volume,
+                 reagent, reagent_volume,
+                 additive, additive_volume,
+                 light_stage, factory=False):
         assert isinstance(parameter_space, ParameterSpace)
         self.parameter_space = parameter_space
 
@@ -190,7 +206,7 @@ class Experiment():
         assert isinstance(reagent_volume, int)
         if not factory:
             assert self.reagent.min_volume <= reagent_volume <= self.reagent.max_volume,\
-               f"reagent volume of {reagent_volume} is outside the range {self.reagent.min_volume}-{self.reagent.max_volume}"
+                f"reagent volume of {reagent_volume} is outside the range {self.reagent.min_volume}-{self.reagent.max_volume}"
         self.reagent_volume = reagent_volume
 
         if additive is None:
@@ -229,7 +245,7 @@ class Experiment():
             raise ValueError("unexpected light_stage")
 
     def __str__(self):
-        return_string  = f"solv={self.solvent} ({self.solvent_volume} uL) temp={self.temperature}°C "
+        return_string = f"solv={self.solvent} ({self.solvent_volume} uL) temp={self.temperature}°C "
         return_string += f"SM = {self.starting_material_volume} uL "
         return_string += f"reagent={self.reagent.abbreviation} (vol={self.reagent_volume} uL"
         if hasattr(self, "reagent_equivalents"):
@@ -244,31 +260,55 @@ class Experiment():
 
     def get_dict(self):
         json_dict = {
-            "solvent" : self.solvent,
-            "temperature" : self.temperature,
-            "reagent" : self.reagent.name,
-            "reagent_volume" : self.reagent_volume,
-            "reagent_equivalents" : self.reagent_equivalents if hasattr(self, "reagent_equivalents") else "None",
-            "additive" : self.additive.name,
-            "additive_volume" : self.additive_volume,
-            "additive_mole_percent" : self.additive_mole_percent if hasattr(self, "additive_mole_percent") else "None",
-            "light_stage" : self.light_stage,
-            "history_times" : str(self.history["times"]),
-            "history_values" : str(self.history["values"]),
+            "solvent": self.solvent,
+            "temperature": self.temperature,
+            "reagent": self.reagent.name,
+            "reagent_volume": self.reagent_volume,
+            "reagent_equivalents": self.reagent_equivalents if hasattr(
+                self,
+                "reagent_equivalents") else "None",
+            "additive": self.additive.name,
+            "additive_volume": self.additive_volume,
+            "additive_mole_percent": self.additive_mole_percent if hasattr(
+                self,
+                "additive_mole_percent") else "None",
+            "light_stage": self.light_stage,
+            "history_times": str(
+                self.history["times"]),
+            "history_values": str(
+                self.history["values"]),
         }
         return json_dict
 
     def get_json_string(self):
         return json.dumps(self.get_dict(), indent=2)
 
-    # convenience factory method to create experiments using molar equivalents and mole percent instead of volumes
+    # convenience factory method to create experiments using molar equivalents
+    # and mole percent instead of volumes
     @staticmethod
-    def create(parameter_space, solvent, temperature, starting_material_volume, reagent,
-               reagent_equivalents, additive, additive_mole_percent, light_stage):
+    def create(
+            parameter_space,
+            solvent,
+            temperature,
+            starting_material_volume,
+            reagent,
+            reagent_equivalents,
+            additive,
+            additive_mole_percent,
+            light_stage):
         # make an experiment with minimum volumes for reagent and additive then adjust the volumes
         # based on the requested equivalents
-        experiment = Experiment(parameter_space, solvent, temperature, starting_material_volume,
-                                reagent, 1, additive, 1, light_stage, factory=True)
+        experiment = Experiment(
+            parameter_space,
+            solvent,
+            temperature,
+            starting_material_volume,
+            reagent,
+            1,
+            additive,
+            1,
+            light_stage,
+            factory=True)
 
         # check that we have enough information
         assert parameter_space.starting_material.concentration is not None, "must specify starting material concentration"
@@ -281,26 +321,36 @@ class Experiment():
 
         # uL * mol / L = umol
         starting_material_concentration = parameter_space.starting_material.concentration
-        starting_material_micromoles = starting_material_volume * starting_material_concentration
+        starting_material_micromoles = starting_material_volume * \
+            starting_material_concentration
 
         # calculate reagent volume
         reagent_concentration = experiment.reagent.concentration
-        reagent_volume_uL = int(starting_material_micromoles * reagent_equivalents / reagent_concentration)
+        reagent_volume_uL = int(
+            starting_material_micromoles *
+            reagent_equivalents /
+            reagent_concentration)
         if reagent_volume_uL < experiment.reagent.min_volume or reagent_volume_uL > experiment.reagent.max_volume:
-            raise ValueError("requested reagent equivalents translates to a volume that is outside the allowed range")
+            raise ValueError(
+                "requested reagent equivalents translates to a volume that is outside the allowed range")
         experiment.reagent_volume = reagent_volume_uL
         experiment.reagent_equivalents = reagent_equivalents
 
         # calculate additive volume
         additive_concentration = experiment.additive.concentration
         additive_equivalents = additive_mole_percent / 100
-        additive_volume_uL = int(starting_material_micromoles * additive_equivalents / additive_concentration)
+        additive_volume_uL = int(
+            starting_material_micromoles *
+            additive_equivalents /
+            additive_concentration)
         if additive_volume_uL < experiment.additive.min_volume or additive_volume_uL > experiment.additive.max_volume:
-            raise ValueError("requested additive mol% translates to a volume that is outside the allowed range")
+            raise ValueError(
+                "requested additive mol% translates to a volume that is outside the allowed range")
         experiment.additive_volume = additive_volume_uL
         experiment.additive_mole_percent = additive_mole_percent
 
-        total_volume = starting_material_volume + experiment.reagent_volume + experiment.additive_volume
+        total_volume = starting_material_volume + \
+            experiment.reagent_volume + experiment.additive_volume
         experiment.solvent_volume = parameter_space.total_volume - total_volume
         assert experiment.solvent_volume >= 0, f"total volume for this experiment is {total_volume}, which exceeds the max of {parameter_space.total_volume}"
 
@@ -314,7 +364,7 @@ class Experiment():
     # returns: column_names (list of strings),
     #          values (list of integers)
     def get_row(self, sampling=1):
-        assert sampling in [0,1]
+        assert sampling in [0, 1]
 
         # initialize lists
         column_names = ["Experiment_ID", "Rxn_temp"]
@@ -322,11 +372,13 @@ class Experiment():
         solvents = self.parameter_space.solvents
 
         # starting material
-        column_names.extend([f"{self.starting_material.abbreviation}_{solvent}" for solvent in solvents])
-        values.extend([ 0 for solvent in solvents ])
-        solvent_index = 2+solvents.index(self.solvent)
+        column_names.extend(
+            [f"{self.starting_material.abbreviation}_{solvent}" for solvent in solvents])
+        values.extend([0 for solvent in solvents])
+        solvent_index = 2 + solvents.index(self.solvent)
         values[solvent_index] = self.starting_material_volume
-        assert len(column_names) == len(values), f"len(column_names)={len(column_names)} but len(values)={len(values)}"
+        assert len(column_names) == len(
+            values), f"len(column_names)={len(column_names)} but len(values)={len(values)}"
 
         # reagent
         reagents = self.parameter_space.reagents
@@ -339,7 +391,8 @@ class Experiment():
                 else:
                     value = 0
                 values.append(value)
-        assert len(column_names) == len(values), f"len(column_names)={len(column_names)} but len(values)={len(values)}"
+        assert len(column_names) == len(
+            values), f"len(column_names)={len(column_names)} but len(values)={len(values)}"
 
         # additive
         additives = self.parameter_space.additives
@@ -352,7 +405,8 @@ class Experiment():
                 else:
                     value = 0
                 values.append(value)
-        assert len(column_names) == len(values), f"len(column_names)={len(column_names)} but len(values)={len(values)}"
+        assert len(column_names) == len(
+            values), f"len(column_names)={len(column_names)} but len(values)={len(values)}"
 
         # makeup solvent
         for solvent in solvents:
@@ -362,7 +416,8 @@ class Experiment():
             else:
                 value = 0
             values.append(value)
-        assert len(column_names) == len(values), f"len(column_names)={len(column_names)} but len(values)={len(values)}"
+        assert len(column_names) == len(
+            values), f"len(column_names)={len(column_names)} but len(values)={len(values)}"
 
         # light stage
         column_names.append("Stage")
@@ -372,9 +427,11 @@ class Experiment():
         column_names.append("Sampling")
         values.append(sampling)
 
-        # return result 
-        assert len(column_names) == len(values), f"len(column_names)={len(column_names)} but len(values)={len(values)}"
+        # return result
+        assert len(column_names) == len(
+            values), f"len(column_names)={len(column_names)} but len(values)={len(values)}"
         return column_names, values
+
 
 def volume_to_equivalents(starting_material, reagent, reagent_volume):
     assert isinstance(starting_material, Reagent)
@@ -382,13 +439,17 @@ def volume_to_equivalents(starting_material, reagent, reagent_volume):
     assert isinstance(reagent, Reagent)
     assert hasattr(starting_material, "concentration")
     assert hasattr(reagent, "concentration")
-    starting_material_moles = starting_material.concentration * starting_material.min_volume
+    starting_material_moles = starting_material.concentration * \
+        starting_material.min_volume
     reagent_moles = reagent.concentration * reagent_volume
-    return reagent_moles/starting_material_moles
+    return reagent_moles / starting_material_moles
+
 
 def get_bounds(starting_material, reagent):
     min_volume, max_volume = reagent.min_volume, reagent.max_volume
-    min_equivalents = volume_to_equivalents(starting_material, reagent, min_volume)
-    max_equivalents = volume_to_equivalents(starting_material, reagent, max_volume)
+    min_equivalents = volume_to_equivalents(
+        starting_material, reagent, min_volume)
+    max_equivalents = volume_to_equivalents(
+        starting_material, reagent, max_volume)
     step_size = volume_to_equivalents(starting_material, reagent, 1)
     return min_equivalents, max_equivalents, step_size

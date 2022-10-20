@@ -10,6 +10,8 @@ import time
 POLLING_INTERVAL = 5
 
 # represents a ChemStation integration report
+
+
 class AgilentReport():
     # fields:
     #
@@ -53,7 +55,7 @@ class AgilentReport():
             # fixed-width text
             # sample:
             #
-            #   Peak RetTime Type  Width     Area      Height     Area  
+            #   Peak RetTime Type  Width     Area      Height     Area
             #         [min]        [min]   [mAU*s]     [mAU]        %
             #            1         2         3         4         5         6
             #  0123456789012345678901234567890123456789012345678901234567890
@@ -63,8 +65,9 @@ class AgilentReport():
                 try:
                     retention_time = float(line[5:12])
                     area = float(line[48:56])
-                except:
-                    raise ValueError(f"Error parsing integrals in {filename} for this line:\n{line}")
+                except BaseException:
+                    raise ValueError(
+                        f"Error parsing integrals in {filename} for this line:\n{line}")
                 row = [retention_time, area]
                 rows.append(row)
 
@@ -88,10 +91,12 @@ class AgilentReport():
     # if no match is found, return 0
     def get_integration(self, compound):
         assert compound.min_retention_time <= compound.max_retention_time, f"check retention times for compound {compound.name}"
-        query_df = self.df.query(f"{compound.min_retention_time} <= retention_time <= {compound.max_retention_time}")
+        query_df = self.df.query(
+            f"{compound.min_retention_time} <= retention_time <= {compound.max_retention_time}")
         if len(query_df) == 0:
             return 0.0
         return query_df.area.max()
+
 
 @dataclass
 # represents a compound of interest
@@ -103,21 +108,29 @@ class Peak:
 # create a method that computes yield from HPLC peaks
 # peak_of_interest: product peak
 # internal_standard_peak: if None, return peak_of_interest integral * response_factor
-#                         if Peak, return response_factor * peak integral / IS integral
-def get_yield_function(peak_of_interest, internal_standard_peak=None, response_factor=1.0):
+# if Peak, return response_factor * peak integral / IS integral
+
+
+def get_yield_function(
+        peak_of_interest,
+        internal_standard_peak=None,
+        response_factor=1.0):
     assert isinstance(peak_of_interest, Peak)
     if internal_standard_peak is not None:
         assert isinstance(internal_standard_peak, Peak)
-    assert isinstance(response_factor, (int,float))
+    assert isinstance(response_factor, (int, float))
     assert response_factor > 0
+
     def yield_function(dot_D_folder):
         report = AgilentReport(dot_D_folder)
         peak_area = report.get_integration(peak_of_interest)
 
         if internal_standard_peak is not None:
-            internal_standard_area = report.get_integration(internal_standard_peak)
+            internal_standard_area = report.get_integration(
+                internal_standard_peak)
             if internal_standard_area == 0:
-                print(f"Warning, internal standard not detected in {dot_D_folder}!")
+                print(
+                    f"Warning, internal standard not detected in {dot_D_folder}!")
                 return 0.0
             chemical_yield = response_factor * peak_area / internal_standard_area
             return chemical_yield
@@ -125,11 +138,22 @@ def get_yield_function(peak_of_interest, internal_standard_peak=None, response_f
             return response_factor * peak_area
     return yield_function
 
+
 # for testing
 if __name__ == '__main__':
-    starting_material_peak = Peak(name="starting material", min_retention_time=1.28, max_retention_time=1.48)
-    product_peak = Peak(name="bromo product", min_retention_time=1.53, max_retention_time=1.73)
-    internal_standard_peak = Peak(name="internal standard", min_retention_time=2.05, max_retention_time=2.25)
+    starting_material_peak = Peak(
+        name="starting material",
+        min_retention_time=1.28,
+        max_retention_time=1.48)
+    product_peak = Peak(
+        name="bromo product",
+        min_retention_time=1.53,
+        max_retention_time=1.73)
+    internal_standard_peak = Peak(
+        name="internal standard",
+        min_retention_time=2.05,
+        max_retention_time=2.25)
     yield_function = get_yield_function(product_peak, response_factor=1.0)
-    chemical_yield = yield_function("../data/E-Z 2021-09-30 17-18-47/002-2-0312650-0713-BrPR.D")
+    chemical_yield = yield_function(
+        "../data/E-Z 2021-09-30 17-18-47/002-2-0312650-0713-BrPR.D")
     print(chemical_yield)
