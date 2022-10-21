@@ -1,6 +1,6 @@
 # Zhulong
 
-Autonomous optimization code.  This code provides code to run autonomous optimization with a ChemSpeed Robot and Agilent HPLC system.
+Autonomous optimization code.  This code provides code to run autonomous optimization with a ChemSpeed Robot and an Agilent UPLC system.
 
 ### An Autonomous Optimization
 
@@ -144,10 +144,10 @@ parameter_space = ParameterSpace(starting_material, reagents, solvents,
 # print(bounds_dict_string)
 ```
 
-Now, we will define the HPLC peaks of interest:
+Now, we'll define the UPLC peaks of interest:
 
 ```
-# define HPLC peaks
+# define UPLC peaks
 starting_material_peak = Peak(
     name="starting material",
     min_retention_time=0.92,
@@ -160,7 +160,7 @@ dibromo_peak = Peak(
     name="dibromo product",
     min_retention_time=1.42,
     max_retention_time=1.52)
-# inter****nal_standard_peak = Peak(
+# internal_standard_peak = Peak(
 #     name="internal standard",
 #     min_retention_time=1.00,
 #     max_retention_time=1.10)
@@ -170,14 +170,14 @@ Then, we need to calculate the chemical yield:
 
 ```
 # convert the ratio of the product peak over the internal standard peak to the chemical yield via the yield function
-# in this project, we simply report HPLC area % of the product peak
+# in this project, we simply report UPLC area % of the product peak
 yield_function = get_yield_function(
     product_peak,
     internal_standard_peak=None,
     response_factor=1.0)
 ```
 
-Next, we create an object to represent the ChemSpeed robot and define the plateau function:
+Next, we create an object to represent the ChemSpeed robot and define the yield and plateau functions:
 
 ```
 chemspeed = ChemSpeed(
@@ -192,7 +192,7 @@ chemspeed = ChemSpeed(
 
 Dispense volumes will calculated and written to `Closed Loop APO.csv` for importing into the Chemspeed robot software once the experimental parameters are defined by the optimizer.
 
-Now we define the optimizer, initialization method, and acquisition function:
+Now we define the optimization method, initialization method, and acquisition function:
 
 ```
 # get the parameter bounds and define the optimization method
@@ -254,8 +254,7 @@ n_total = 48  # total iterations
 all_experiments = []
 ```
 
-Finally, get a new set of parameters for each experimental round, define the experiment object, and print and save the experiment.
-
+Then we get a new set of parameters for each experimental round:
 ```
 dat = pd.DataFrame()
 f_best = 0
@@ -303,20 +302,50 @@ for r in range(n_total):
     dat.to_csv("dat.csv")
 ```
 
-The output is for each experimental round is:
+The output for each experimental round is:
 
 ```
 Round:  1 	 Optimization method: BO 	 Aquisition function:  PI
 Batch of 8 diverse initial points with seed: 1234
 running experiment
 solv=DMC (164 uL) temp=20°C SM = 80 uL reagent=DBDMH (vol=80 uL, 1.00 equiv) additive=H2SO4 (vol=26 uL, 13 mol%) light=2
+```  
 
-found folder C:\Users\Public\Documents\ChemStation\2\Data\Chemspeed\Chemspeed 2022-05-12 16-00-50 - 10 Rounds - Copy - Copy\0312650-0725-001.D
-parsing C:\Users\Public\Documents\ChemStation\2\Data\Chemspeed\Chemspeed 2022-05-12 16-00-50 - 10 Rounds - Copy - Copy\0312650-0725-001.D
+The code checks the `chemstation_folder` for new `.D` folders every `polling_interval` seconds.  If `ignore_existing_chemstation_folders` is set to `True`, then all the `.D` folders that exist when the `ChemSpeed` object is initialized are ignored.
+
+Once the plateau algorithm determines that a reaction plateau is reached, the final result is reported.
+
+The output for each experimental round is:   
+
 ```
+found folder C:\Users\Public\Documents\ChemStation\2\Data\Chemspeed\Chemspeed 2022-05-12 16-00-50 - 10 Rounds - Copy\0312650-0725-001.D
+parsing C:\Users\Public\Documents\ChemStation\2\Data\Chemspeed\Chemspeed 2022-05-12 16-00-50 - 10 Rounds - Copy\0312650-0725-001.D
 
-*Zhulong* will check `chemstation_folder` for new `.D` folders every `polling_interval` seconds.  If `ignore_existing_chemstation_folders` is set to `True`, then all the `.D` folders that exist when the `ChemSpeed` object is initialized will be ignored.
+Found C:\Users\Public\Documents\ChemStation\2\Data\Chemspeed\Chemspeed 2022-05-12 16-00-50 - 10 Rounds - Copy\0312650-0725-001.D/Report.TXT...parsing...
+yield is 67.4741 (recorded at 1666358105.6932242 s since the epoch)
+Plateau Algorithm No.1
+plateaued=False
 
+found folder C:\Users\Public\Documents\ChemStation\2\Data\Chemspeed\Chemspeed 2022-05-12 16-00-50 - 10 Rounds - Copy\0312650-0725-002.D
+parsing C:\Users\Public\Documents\ChemStation\2\Data\Chemspeed\Chemspeed 2022-05-12 16-00-50 - 10 Rounds - Copy\0312650-0725-002.D
+
+Found C:\Users\Public\Documents\ChemStation\2\Data\Chemspeed\Chemspeed 2022-05-12 16-00-50 - 10 Rounds - Copy\0312650-0725-002.D/Report.TXT...parsing...
+yield is 81.8419 (recorded at 1666358106.1884985 s since the epoch)
+Plateau Algorithm No.1
+plateaued=False
+
+found folder C:\Users\Public\Documents\ChemStation\2\Data\Chemspeed\Chemspeed 2022-05-12 16-00-50 - 10 Rounds - Copy\0312650-0725-003.D
+parsing C:\Users\Public\Documents\ChemStation\2\Data\Chemspeed\Chemspeed 2022-05-12 16-00-50 - 10 Rounds - Copy\0312650-0725-003.D
+
+Found C:\Users\Public\Documents\ChemStation\2\Data\Chemspeed\Chemspeed 2022-05-12 16-00-50 - 10 Rounds - Copy\0312650-0725-003.D/Report.TXT...parsing...
+yield is 81.9339 (recorded at 1666358106.6911287 s since the epoch)
+Plateau Algorithm No.1
+plateaued=True
+final result is:
+history['times']=[1666358105.6932242, 1666358106.1884985, 1666358106.6911287]
+history['values']=[67.4741, 81.8419, 81.9339]
+Round:  1 f:  81.9339 f_best 81.9339 
+```  
 
 ### Authors
 
