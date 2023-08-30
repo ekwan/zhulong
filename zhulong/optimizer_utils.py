@@ -15,7 +15,6 @@ Transformations between f and z
         transform_z2f(z)
 """
 
-
 def transform_f2z(f):
     if isinstance(f, np.ndarray) and (f.shape[0] > 1):
         z = [transform_f2z(ff) for ff in f]
